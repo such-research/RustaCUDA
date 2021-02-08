@@ -155,12 +155,6 @@ extern crate bitflags;
 extern crate cuda_sys;
 extern crate rustacuda_core;
 
-#[allow(unused_imports, clippy::useless_attribute)]
-#[macro_use]
-extern crate rustacuda_derive;
-#[doc(hidden)]
-pub use rustacuda_derive::*;
-
 pub mod context;
 pub mod device;
 pub mod error;

@@ -1,5 +1,3 @@
-use crate::memory::DeviceCopy;
-
 use core::{
     cmp::Ordering,
     fmt::{self, Debug, Pointer},
@@ -69,8 +67,6 @@ derive_traits!(DevicePointer<T> UnifiedPointer<T>);
 /// thus possible to pass a `DevicePointer` to a CUDA kernel written in C.
 #[repr(transparent)]
 pub struct DevicePointer<T: ?Sized>(*mut T);
-
-unsafe impl<T: ?Sized> DeviceCopy for DevicePointer<T> {}
 
 impl<T: ?Sized> DevicePointer<T> {
     /// Wrap the given raw pointer in a DevicePointer. The given pointer is assumed to be a valid,
@@ -401,8 +397,6 @@ impl<T: ?Sized> DevicePointer<T> {
 /// thus possible to pass a `UnifiedPointer` to a CUDA kernel written in C.
 #[repr(transparent)]
 pub struct UnifiedPointer<T: ?Sized>(*mut T);
-
-unsafe impl<T: ?Sized + DeviceCopy> DeviceCopy for UnifiedPointer<T> {}
 
 impl<T: ?Sized> UnifiedPointer<T> {
     /// Wrap the given raw pointer in a UnifiedPointer. The given pointer is assumed to be a valid,

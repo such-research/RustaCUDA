@@ -6,7 +6,7 @@
 //! extern crate rustacuda;
 //! extern crate rustacuda_core;
 //!
-//! #[derive(Clone, DeviceCopy)]
+//! #[derive(Clone)]
 //! struct ShouldFailTuple(Vec<u64>);
 //! ```
 //!
@@ -15,7 +15,7 @@
 //! extern crate rustacuda;
 //! extern crate rustacuda_core;
 //!
-//! #[derive(Clone, DeviceCopy)]
+//! #[derive(Clone)]
 //! struct ShouldFailStruct{v: Vec<u64>}
 //! ```
 //!
@@ -24,7 +24,7 @@
 //! extern crate rustacuda;
 //! extern crate rustacuda_core;
 //!
-//! #[derive(Clone, DeviceCopy)]
+//! #[derive(Clone)]
 //! enum ShouldFailTupleEnum {
 //!     Unit,
 //!     Tuple(Vec<u64>),
@@ -36,7 +36,7 @@
 //! extern crate rustacuda;
 //! extern crate rustacuda_core;
 //!
-//! #[derive(Clone, DeviceCopy)]
+//! #[derive(Clone)]
 //! enum ShouldFailStructEnum {
 //!     Unit,
 //!     Struct{v: Vec<u64>},
@@ -48,7 +48,7 @@
 //! extern crate rustacuda;
 //! extern crate rustacuda_core;
 //!
-//! #[derive(Copy, Clone, DeviceCopy)]
+//! #[derive(Copy, Clone)]
 //! union ShouldFailUnion {
 //!     u: *const u64,
 //!     o: *const i64,

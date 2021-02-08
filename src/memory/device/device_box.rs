@@ -2,7 +2,6 @@ use crate::error::{CudaResult, DropResult, ToResult};
 use crate::memory::device::AsyncCopyDestination;
 use crate::memory::device::CopyDestination;
 use crate::memory::malloc::{cuda_free, cuda_malloc};
-use crate::memory::DeviceCopy;
 use crate::memory::DevicePointer;
 use crate::stream::Stream;
 use cuda_sys::cuda;
@@ -18,7 +17,7 @@ use std::os::raw::c_void;
 pub struct DeviceBox<T> {
     ptr: DevicePointer<T>,
 }
-impl<T: DeviceCopy> DeviceBox<T> {
+impl<T> DeviceBox<T> {
     /// Allocate device memory and place val into it.
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
@@ -255,7 +254,7 @@ impl<T> Pointer for DeviceBox<T> {
     }
 }
 impl<T> crate::private::Sealed for DeviceBox<T> {}
-impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
+impl<T> CopyDestination<T> for DeviceBox<T> {
     fn copy_from(&mut self, val: &T) -> CudaResult<()> {
         let size = mem::size_of::<T>();
         if size != 0 {
@@ -286,7 +285,7 @@ impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
         Ok(())
     }
 }
-impl<T: DeviceCopy> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
+impl<T> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
     fn copy_from(&mut self, val: &DeviceBox<T>) -> CudaResult<()> {
         let size = mem::size_of::<T>();
         if size != 0 {
@@ -309,7 +308,7 @@ impl<T: DeviceCopy> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
         Ok(())
     }
 }
-impl<T: DeviceCopy> AsyncCopyDestination<DeviceBox<T>> for DeviceBox<T> {
+impl<T> AsyncCopyDestination<DeviceBox<T>> for DeviceBox<T> {
     unsafe fn async_copy_from(&mut self, val: &DeviceBox<T>, stream: &Stream) -> CudaResult<()> {
         let size = mem::size_of::<T>();
         if size != 0 {
@@ -345,7 +344,6 @@ mod test_device_box {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_allocate_and_free_device_box() {

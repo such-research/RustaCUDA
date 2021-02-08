@@ -1,7 +1,6 @@
 use crate::error::{CudaResult, DropResult, ToResult};
 use crate::memory::device::{AsyncCopyDestination, CopyDestination, DeviceSlice};
 use crate::memory::malloc::{cuda_free, cuda_malloc};
-use crate::memory::DeviceCopy;
 use crate::memory::DevicePointer;
 use crate::stream::Stream;
 use cuda_sys::cuda;
@@ -170,7 +169,7 @@ impl<T> DeviceBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> DeviceBuffer<T> {
+impl<T> DeviceBuffer<T> {
     /// Allocate a new device buffer of the same size as `slice`, initialized with a clone of
     /// the data in `slice`.
     ///
@@ -271,7 +270,6 @@ mod test_device_buffer {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_from_slice_drop() {
@@ -445,7 +443,7 @@ mod test_device_buffer {
     }
 
     #[test]
-    fn test_can_create_uninitialized_non_devicecopy_buffers() {
+    fn test_can_create_uninitialized_buffers() {
         let _context = crate::quick_init().unwrap();
         unsafe {
             let _box: DeviceBox<Vec<u8>> = DeviceBox::uninitialized().unwrap();

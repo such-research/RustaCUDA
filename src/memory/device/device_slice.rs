@@ -1,7 +1,6 @@
 use crate::error::{CudaResult, ToResult};
 use crate::memory::device::AsyncCopyDestination;
 use crate::memory::device::{CopyDestination, DeviceBuffer};
-use crate::memory::DeviceCopy;
 use crate::memory::DevicePointer;
 use crate::stream::Stream;
 use cuda_sys::cuda;
@@ -437,7 +436,7 @@ impl_index! {
     RangeToInclusive<usize>
 }
 impl<T> crate::private::Sealed for DeviceSlice<T> {}
-impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<T> {
+impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &I) -> CudaResult<()> {
         let val = val.as_ref();
         assert!(
@@ -474,7 +473,7 @@ impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for 
         Ok(())
     }
 }
-impl<T: DeviceCopy> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
+impl<T> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &DeviceSlice<T>) -> CudaResult<()> {
         assert!(
             self.len() == val.len(),
@@ -505,7 +504,7 @@ impl<T: DeviceCopy> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         Ok(())
     }
 }
-impl<T: DeviceCopy> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
+impl<T> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &DeviceBuffer<T>) -> CudaResult<()> {
         self.copy_from(val as &DeviceSlice<T>)
     }
@@ -514,7 +513,7 @@ impl<T: DeviceCopy> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
         self.copy_to(val as &mut DeviceSlice<T>)
     }
 }
-impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
+impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
     for DeviceSlice<T>
 {
     unsafe fn async_copy_from(&mut self, val: &I, stream: &Stream) -> CudaResult<()> {
@@ -555,7 +554,7 @@ impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
         Ok(())
     }
 }
-impl<T: DeviceCopy> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
+impl<T> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
     unsafe fn async_copy_from(&mut self, val: &DeviceSlice<T>, stream: &Stream) -> CudaResult<()> {
         assert!(
             self.len() == val.len(),
@@ -592,7 +591,7 @@ impl<T: DeviceCopy> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         Ok(())
     }
 }
-impl<T: DeviceCopy> AsyncCopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
+impl<T> AsyncCopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
     unsafe fn async_copy_from(&mut self, val: &DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
         self.async_copy_from(val as &DeviceSlice<T>, stream)
     }

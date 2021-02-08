@@ -1,4 +1,3 @@
-use super::DeviceCopy;
 use crate::error::*;
 use crate::memory::DevicePointer;
 use crate::memory::UnifiedPointer;
@@ -83,7 +82,7 @@ pub unsafe fn cuda_malloc<T>(count: usize) -> CudaResult<DevicePointer<T>> {
 ///     cuda_free_unified(unified_buffer).unwrap();
 /// }
 /// ```
-pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<UnifiedPointer<T>> {
+pub unsafe fn cuda_malloc_unified<T>(count: usize) -> CudaResult<UnifiedPointer<T>> {
     let size = count.checked_mul(mem::size_of::<T>()).unwrap_or(0);
     if size == 0 {
         return Err(CudaError::InvalidMemoryAllocation);
@@ -156,7 +155,7 @@ pub unsafe fn cuda_free<T>(mut p: DevicePointer<T>) -> CudaResult<()> {
 ///     cuda_free_unified(unified_buffer).unwrap();
 /// }
 /// ```
-pub unsafe fn cuda_free_unified<T: DeviceCopy>(mut p: UnifiedPointer<T>) -> CudaResult<()> {
+pub unsafe fn cuda_free_unified<T>(mut p: UnifiedPointer<T>) -> CudaResult<()> {
     let ptr = p.as_raw_mut();
     if ptr.is_null() {
         return Err(CudaError::InvalidMemoryAllocation);
@@ -247,7 +246,6 @@ mod test {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_cuda_malloc() {

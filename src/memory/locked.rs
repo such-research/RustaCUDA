@@ -1,4 +1,3 @@
-use super::DeviceCopy;
 use crate::error::*;
 use crate::memory::malloc::{cuda_free_locked, cuda_malloc_locked};
 use std::mem;
@@ -11,11 +10,11 @@ use std::slice;
 /// See the [`module-level documentation`](../memory/index.html) for more details on page-locked
 /// memory.
 #[derive(Debug)]
-pub struct LockedBuffer<T: DeviceCopy> {
+pub struct LockedBuffer<T> {
     buf: *mut T,
     capacity: usize,
 }
-impl<T: DeviceCopy + Clone> LockedBuffer<T> {
+impl<T: Clone> LockedBuffer<T> {
     /// Allocate a new page-locked buffer large enough to hold `size` `T`'s and initialized with
     /// clones of `value`.
     ///
@@ -68,7 +67,7 @@ impl<T: DeviceCopy + Clone> LockedBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> LockedBuffer<T> {
+impl<T> LockedBuffer<T> {
     /// Allocate a new page-locked buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
     ///
@@ -223,17 +222,17 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     }
 }
 
-impl<T: DeviceCopy> AsRef<[T]> for LockedBuffer<T> {
+impl<T> AsRef<[T]> for LockedBuffer<T> {
     fn as_ref(&self) -> &[T] {
         self
     }
 }
-impl<T: DeviceCopy> AsMut<[T]> for LockedBuffer<T> {
+impl<T> AsMut<[T]> for LockedBuffer<T> {
     fn as_mut(&mut self) -> &mut [T] {
         self
     }
 }
-impl<T: DeviceCopy> ops::Deref for LockedBuffer<T> {
+impl<T> ops::Deref for LockedBuffer<T> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
@@ -243,7 +242,7 @@ impl<T: DeviceCopy> ops::Deref for LockedBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> ops::DerefMut for LockedBuffer<T> {
+impl<T> ops::DerefMut for LockedBuffer<T> {
     fn deref_mut(&mut self) -> &mut [T] {
         unsafe {
             let ptr = self.buf;
@@ -251,7 +250,7 @@ impl<T: DeviceCopy> ops::DerefMut for LockedBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> Drop for LockedBuffer<T> {
+impl<T> Drop for LockedBuffer<T> {
     fn drop(&mut self) {
         if self.buf.is_null() {
             return;
@@ -274,7 +273,6 @@ mod test {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_new() {

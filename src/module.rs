@@ -2,7 +2,7 @@
 
 use crate::error::{CudaResult, DropResult, ToResult};
 use crate::function::Function;
-use crate::memory::{CopyDestination, DeviceCopy, DevicePointer};
+use crate::memory::{CopyDestination, DevicePointer};
 use cuda_sys::cuda;
 use std::ffi::{c_void, CStr};
 use std::fmt;
@@ -111,7 +111,7 @@ impl Module {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_global<'a, T: DeviceCopy>(&'a self, name: &CStr) -> CudaResult<Symbol<'a, T>> {
+    pub fn get_global<'a, T>(&'a self, name: &CStr) -> CudaResult<Symbol<'a, T>> {
         unsafe {
             let mut ptr: DevicePointer<T> = DevicePointer::null();
             let mut size: usize = 0;
@@ -225,17 +225,17 @@ impl Drop for Module {
 
 /// Handle to a symbol defined within a CUDA module.
 #[derive(Debug)]
-pub struct Symbol<'a, T: DeviceCopy> {
+pub struct Symbol<'a, T> {
     ptr: DevicePointer<T>,
     module: PhantomData<&'a Module>,
 }
-impl<'a, T: DeviceCopy> crate::private::Sealed for Symbol<'a, T> {}
-impl<'a, T: DeviceCopy> fmt::Pointer for Symbol<'a, T> {
+impl<'a, T> crate::private::Sealed for Symbol<'a, T> {}
+impl<'a, T> fmt::Pointer for Symbol<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
-impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
+impl<'a, T> CopyDestination<T> for Symbol<'a, T> {
     fn copy_from(&mut self, val: &T) -> CudaResult<()> {
         let size = mem::size_of::<T>();
         if size != 0 {

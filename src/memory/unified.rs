@@ -1,4 +1,3 @@
-use super::DeviceCopy;
 use crate::error::*;
 use crate::memory::malloc::{cuda_free_unified, cuda_malloc_unified};
 use crate::memory::UnifiedPointer;
@@ -18,10 +17,10 @@ use std::slice;
 /// memory. Should behave equivalently to `std::boxed::Box`, except that the allocated memory can be
 /// seamlessly shared between host and device.
 #[derive(Debug)]
-pub struct UnifiedBox<T: DeviceCopy> {
+pub struct UnifiedBox<T> {
     ptr: UnifiedPointer<T>,
 }
-impl<T: DeviceCopy> UnifiedBox<T> {
+impl<T> UnifiedBox<T> {
     /// Allocate unified memory and place val into it.
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
@@ -234,7 +233,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
         }
     }
 }
-impl<T: DeviceCopy> Drop for UnifiedBox<T> {
+impl<T> Drop for UnifiedBox<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
             let ptr = mem::replace(&mut self.ptr, UnifiedPointer::null());
@@ -246,55 +245,55 @@ impl<T: DeviceCopy> Drop for UnifiedBox<T> {
     }
 }
 
-impl<T: DeviceCopy> Borrow<T> for UnifiedBox<T> {
+impl<T> Borrow<T> for UnifiedBox<T> {
     fn borrow(&self) -> &T {
         &**self
     }
 }
-impl<T: DeviceCopy> BorrowMut<T> for UnifiedBox<T> {
+impl<T> BorrowMut<T> for UnifiedBox<T> {
     fn borrow_mut(&mut self) -> &mut T {
         &mut **self
     }
 }
-impl<T: DeviceCopy> AsRef<T> for UnifiedBox<T> {
+impl<T> AsRef<T> for UnifiedBox<T> {
     fn as_ref(&self) -> &T {
         &**self
     }
 }
-impl<T: DeviceCopy> AsMut<T> for UnifiedBox<T> {
+impl<T> AsMut<T> for UnifiedBox<T> {
     fn as_mut(&mut self) -> &mut T {
         &mut **self
     }
 }
-impl<T: DeviceCopy> Deref for UnifiedBox<T> {
+impl<T> Deref for UnifiedBox<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
         unsafe { &*self.ptr.as_raw() }
     }
 }
-impl<T: DeviceCopy> DerefMut for UnifiedBox<T> {
+impl<T> DerefMut for UnifiedBox<T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.ptr.as_raw_mut() }
     }
 }
-impl<T: Display + DeviceCopy> Display for UnifiedBox<T> {
+impl<T: Display> Display for UnifiedBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&**self, f)
     }
 }
-impl<T: DeviceCopy> Pointer for UnifiedBox<T> {
+impl<T> Pointer for UnifiedBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
-impl<T: DeviceCopy + PartialEq> PartialEq for UnifiedBox<T> {
+impl<T: PartialEq> PartialEq for UnifiedBox<T> {
     fn eq(&self, other: &UnifiedBox<T>) -> bool {
         PartialEq::eq(&**self, &**other)
     }
 }
-impl<T: DeviceCopy + Eq> Eq for UnifiedBox<T> {}
-impl<T: DeviceCopy + PartialOrd> PartialOrd for UnifiedBox<T> {
+impl<T: Eq> Eq for UnifiedBox<T> {}
+impl<T: PartialOrd> PartialOrd for UnifiedBox<T> {
     fn partial_cmp(&self, other: &UnifiedBox<T>) -> Option<Ordering> {
         PartialOrd::partial_cmp(&**self, &**other)
     }
@@ -311,12 +310,12 @@ impl<T: DeviceCopy + PartialOrd> PartialOrd for UnifiedBox<T> {
         PartialOrd::gt(&**self, &**other)
     }
 }
-impl<T: DeviceCopy + Ord> Ord for UnifiedBox<T> {
+impl<T: Ord> Ord for UnifiedBox<T> {
     fn cmp(&self, other: &UnifiedBox<T>) -> Ordering {
         Ord::cmp(&**self, &**other)
     }
 }
-impl<T: DeviceCopy + Hash> Hash for UnifiedBox<T> {
+impl<T: Hash> Hash for UnifiedBox<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         (**self).hash(state);
     }
@@ -326,11 +325,11 @@ impl<T: DeviceCopy + Hash> Hash for UnifiedBox<T> {
 ///
 /// See the [`module-level documentation`](../memory/index.html) for more details on unified memory.
 #[derive(Debug)]
-pub struct UnifiedBuffer<T: DeviceCopy> {
+pub struct UnifiedBuffer<T> {
     buf: UnifiedPointer<T>,
     capacity: usize,
 }
-impl<T: DeviceCopy + Clone> UnifiedBuffer<T> {
+impl<T: Clone> UnifiedBuffer<T> {
     /// Allocate a new unified buffer large enough to hold `size` `T`'s and initialized with
     /// clones of `value`.
     ///
@@ -383,7 +382,7 @@ impl<T: DeviceCopy + Clone> UnifiedBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> UnifiedBuffer<T> {
+impl<T> UnifiedBuffer<T> {
     /// Allocate a new unified buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
     ///
@@ -547,17 +546,17 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     }
 }
 
-impl<T: DeviceCopy> AsRef<[T]> for UnifiedBuffer<T> {
+impl<T> AsRef<[T]> for UnifiedBuffer<T> {
     fn as_ref(&self) -> &[T] {
         self
     }
 }
-impl<T: DeviceCopy> AsMut<[T]> for UnifiedBuffer<T> {
+impl<T> AsMut<[T]> for UnifiedBuffer<T> {
     fn as_mut(&mut self) -> &mut [T] {
         self
     }
 }
-impl<T: DeviceCopy> Deref for UnifiedBuffer<T> {
+impl<T> Deref for UnifiedBuffer<T> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
@@ -567,7 +566,7 @@ impl<T: DeviceCopy> Deref for UnifiedBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> DerefMut for UnifiedBuffer<T> {
+impl<T> DerefMut for UnifiedBuffer<T> {
     fn deref_mut(&mut self) -> &mut [T] {
         unsafe {
             let ptr = self.buf.as_raw_mut();
@@ -575,7 +574,7 @@ impl<T: DeviceCopy> DerefMut for UnifiedBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> Drop for UnifiedBuffer<T> {
+impl<T> Drop for UnifiedBuffer<T> {
     fn drop(&mut self) {
         if self.buf.is_null() {
             return;
@@ -598,7 +597,6 @@ mod test_unified_box {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_allocate_and_free() {
@@ -661,7 +659,6 @@ mod test_unified_buffer {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_new() {
