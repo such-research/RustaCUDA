@@ -111,12 +111,10 @@ impl<T> DeviceSlice<T> {
     /// ```
     pub fn split_at(&self, mid: usize) -> (&DeviceSlice<T>, &DeviceSlice<T>) {
         let (left, right) = self.0.split_at(mid);
-        unsafe {
-            (
-                DeviceSlice::from_slice(left),
-                DeviceSlice::from_slice(right),
-            )
-        }
+        (
+            DeviceSlice::from_slice(left),
+            DeviceSlice::from_slice(right)
+        )
     }
 
     /// Divides one mutable DeviceSlice into two at a given index.
@@ -149,12 +147,10 @@ impl<T> DeviceSlice<T> {
     /// ```
     pub fn split_at_mut(&mut self, mid: usize) -> (&mut DeviceSlice<T>, &mut DeviceSlice<T>) {
         let (left, right) = self.0.split_at_mut(mid);
-        unsafe {
-            (
-                DeviceSlice::from_slice_mut(left),
-                DeviceSlice::from_slice_mut(right),
-            )
-        }
+        (
+            DeviceSlice::from_slice_mut(left),
+            DeviceSlice::from_slice_mut(right),
+        )
     }
 
     /// Returns an iterator over `chunk_size` elements of the slice at a time. The chunks are device
@@ -227,14 +223,14 @@ impl<T> DeviceSlice<T> {
 
     /// Private function used to transmute a CPU slice (which must have the device pointer as it's
     /// buffer pointer) to a DeviceSlice. Completely unsafe.
-    pub(super) unsafe fn from_slice(slice: &[T]) -> &DeviceSlice<T> {
-        &*(slice as *const [T] as *const DeviceSlice<T>)
+    pub(super) fn from_slice(slice: &[T]) -> &DeviceSlice<T> {
+        unsafe { &*(slice as *const [T] as *const DeviceSlice<T>) }
     }
 
     /// Private function used to transmute a mutable CPU slice (which must have the device pointer
     /// as it's buffer pointer) to a mutable DeviceSlice. Completely unsafe.
-    pub(super) unsafe fn from_slice_mut(slice: &mut [T]) -> &mut DeviceSlice<T> {
-        &mut *(slice as *mut [T] as *mut DeviceSlice<T>)
+    pub(super) fn from_slice_mut(slice: &mut [T]) -> &mut DeviceSlice<T> {
+        unsafe { &mut *(slice as *mut [T] as *mut DeviceSlice<T>) }
     }
 
     /// Returns a `DevicePointer<T>` to the buffer.
@@ -321,7 +317,7 @@ impl<'a, T> Iterator for DeviceChunks<'a, T> {
     fn next(&mut self) -> Option<&'a DeviceSlice<T>> {
         self.0
             .next()
-            .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
+            .map(|slice| DeviceSlice::from_slice(slice))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -335,14 +331,14 @@ impl<'a, T> Iterator for DeviceChunks<'a, T> {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         self.0
             .nth(n)
-            .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
+            .map(|slice| DeviceSlice::from_slice(slice))
     }
 
     #[inline]
     fn last(self) -> Option<Self::Item> {
         self.0
             .last()
-            .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
+            .map(|slice| DeviceSlice::from_slice(slice))
     }
 }
 impl<'a, T> DoubleEndedIterator for DeviceChunks<'a, T> {
@@ -350,7 +346,7 @@ impl<'a, T> DoubleEndedIterator for DeviceChunks<'a, T> {
     fn next_back(&mut self) -> Option<&'a DeviceSlice<T>> {
         self.0
             .next_back()
-            .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
+            .map(|slice| DeviceSlice::from_slice(slice))
     }
 }
 impl<'a, T> ExactSizeIterator for DeviceChunks<'a, T> {}
@@ -371,7 +367,7 @@ impl<'a, T> Iterator for DeviceChunksMut<'a, T> {
     fn next(&mut self) -> Option<&'a mut DeviceSlice<T>> {
         self.0
             .next()
-            .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
+            .map(|slice| DeviceSlice::from_slice_mut(slice))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -385,14 +381,14 @@ impl<'a, T> Iterator for DeviceChunksMut<'a, T> {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         self.0
             .nth(n)
-            .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
+            .map(|slice| DeviceSlice::from_slice_mut(slice))
     }
 
     #[inline]
     fn last(self) -> Option<Self::Item> {
         self.0
             .last()
-            .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
+            .map(|slice| DeviceSlice::from_slice_mut(slice))
     }
 }
 impl<'a, T> DoubleEndedIterator for DeviceChunksMut<'a, T> {
@@ -400,7 +396,7 @@ impl<'a, T> DoubleEndedIterator for DeviceChunksMut<'a, T> {
     fn next_back(&mut self) -> Option<&'a mut DeviceSlice<T>> {
         self.0
             .next_back()
-            .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
+            .map(|slice| DeviceSlice::from_slice_mut(slice))
     }
 }
 impl<'a, T> ExactSizeIterator for DeviceChunksMut<'a, T> {}
@@ -414,19 +410,20 @@ macro_rules! impl_index {
                 type Output = DeviceSlice<T>;
 
                 fn index(&self, index: $t) -> &Self {
-                    unsafe { DeviceSlice::from_slice(self.0.index(index)) }
+                    DeviceSlice::from_slice(self.0.index(index))
                 }
             }
 
             impl<T> IndexMut<$t> for DeviceSlice<T>
             {
                 fn index_mut(&mut self, index: $t) -> &mut Self {
-                    unsafe { DeviceSlice::from_slice_mut( self.0.index_mut(index)) }
+                    DeviceSlice::from_slice_mut( self.0.index_mut(index))
                 }
             }
         )*
     }
 }
+
 impl_index! {
     Range<usize>
     RangeFull
@@ -435,6 +432,7 @@ impl_index! {
     RangeTo<usize>
     RangeToInclusive<usize>
 }
+
 impl<T> crate::private::Sealed for DeviceSlice<T> {}
 impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &I) -> CudaResult<()> {
@@ -516,7 +514,7 @@ impl<T> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
 impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
     for DeviceSlice<T>
 {
-    unsafe fn async_copy_from(&mut self, val: &I, stream: &Stream) -> CudaResult<()> {
+    fn async_copy_from(&mut self, val: &I, stream: &Stream) -> CudaResult<()> {
         let val = val.as_ref();
         assert!(
             self.len() == val.len(),
@@ -524,18 +522,20 @@ impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
         );
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
-            cuda::cuMemcpyHtoDAsync_v2(
-                self.0.as_mut_ptr() as u64,
-                val.as_ptr() as *const c_void,
-                size,
-                stream.as_inner(),
-            )
-            .to_result()?
+            unsafe {
+                cuda::cuMemcpyHtoDAsync_v2(
+                    self.0.as_mut_ptr() as u64,
+                    val.as_ptr() as *const c_void,
+                    size,
+                    stream.as_inner(),
+                )
+                .to_result()?
+            }
         }
         Ok(())
     }
 
-    unsafe fn async_copy_to(&self, val: &mut I, stream: &Stream) -> CudaResult<()> {
+    fn async_copy_to(&self, val: &mut I, stream: &Stream) -> CudaResult<()> {
         let val = val.as_mut();
         assert!(
             self.len() == val.len(),
@@ -543,60 +543,66 @@ impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
         );
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
-            cuda::cuMemcpyDtoHAsync_v2(
-                val.as_mut_ptr() as *mut c_void,
-                self.as_ptr() as u64,
-                size,
-                stream.as_inner(),
-            )
-            .to_result()?
+            unsafe {
+                cuda::cuMemcpyDtoHAsync_v2(
+                    val.as_mut_ptr() as *mut c_void,
+                    self.as_ptr() as u64,
+                    size,
+                    stream.as_inner(),
+                )
+                .to_result()?
+            }
         }
         Ok(())
     }
 }
 impl<T> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
-    unsafe fn async_copy_from(&mut self, val: &DeviceSlice<T>, stream: &Stream) -> CudaResult<()> {
+    fn async_copy_from(&mut self, val: &DeviceSlice<T>, stream: &Stream) -> CudaResult<()> {
         assert!(
             self.len() == val.len(),
             "destination and source slices have different lengths"
         );
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
-            cuda::cuMemcpyDtoDAsync_v2(
-                self.0.as_mut_ptr() as u64,
-                val.as_ptr() as u64,
-                size,
-                stream.as_inner(),
-            )
-            .to_result()?
+            unsafe {
+                cuda::cuMemcpyDtoDAsync_v2(
+                    self.0.as_mut_ptr() as u64,
+                    val.as_ptr() as u64,
+                    size,
+                    stream.as_inner(),
+                )
+                .to_result()?
+            }
         }
         Ok(())
     }
 
-    unsafe fn async_copy_to(&self, val: &mut DeviceSlice<T>, stream: &Stream) -> CudaResult<()> {
+    fn async_copy_to(&self, val: &mut DeviceSlice<T>, stream: &Stream) -> CudaResult<()> {
         assert!(
             self.len() == val.len(),
             "destination and source slices have different lengths"
         );
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
-            cuda::cuMemcpyDtoDAsync_v2(
-                val.as_mut_ptr() as u64,
-                self.as_ptr() as u64,
-                size,
-                stream.as_inner(),
-            )
-            .to_result()?
+            unsafe {
+                cuda::cuMemcpyDtoDAsync_v2(
+                    val.as_mut_ptr() as u64,
+                    self.as_ptr() as u64,
+                    size,
+                    stream.as_inner(),
+                )
+                .to_result()?
+            }
         }
         Ok(())
     }
 }
 impl<T> AsyncCopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
-    unsafe fn async_copy_from(&mut self, val: &DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
+    fn async_copy_from(&mut self, val: &DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
         self.async_copy_from(val as &DeviceSlice<T>, stream)
     }
 
-    unsafe fn async_copy_to(&self, val: &mut DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
+    fn async_copy_to(&self, val: &mut DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
         self.async_copy_to(val as &mut DeviceSlice<T>, stream)
     }
 }

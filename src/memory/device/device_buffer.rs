@@ -7,8 +7,6 @@ use cuda_sys::cuda;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
-use std::ptr;
-
 /// Fixed-size device-side buffer. Provides basic access to device memory.
 #[derive(Debug)]
 pub struct DeviceBuffer<T> {
@@ -34,14 +32,14 @@ impl<T> DeviceBuffer<T> {
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
-    /// let mut buffer = unsafe { DeviceBuffer::uninitialized(5).unwrap() };
+    /// let mut buffer = DeviceBuffer::uninitialized(5).unwrap();
     /// buffer.copy_from(&[0u64, 1, 2, 3, 4]).unwrap();
     /// ```
-    pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
+    pub fn uninitialized(size: usize) -> CudaResult<Self> {
         let ptr = if size > 0 && mem::size_of::<T>() > 0 {
-            cuda_malloc(size)?
+            unsafe { cuda_malloc(size)? }
         } else {
-            DevicePointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
+            unsafe { DevicePointer::wrap(std::ptr::NonNull::dangling().as_ptr() as *mut T) }
         };
         Ok(DeviceBuffer {
             buf: ptr,
@@ -68,20 +66,23 @@ impl<T> DeviceBuffer<T> {
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
-    /// let buffer = unsafe { DeviceBuffer::zeroed(5).unwrap() };
+    /// let buffer = DeviceBuffer::zeroed(5).unwrap();
     /// let mut host_values = [1u64, 2, 3, 4, 5];
     /// buffer.copy_to(&mut host_values).unwrap();
     /// assert_eq!([0u64, 0, 0, 0, 0], host_values);
     /// ```
-    pub unsafe fn zeroed(size: usize) -> CudaResult<Self> {
+    pub fn zeroed(size: usize) -> CudaResult<Self> {
         let ptr = if size > 0 && mem::size_of::<T>() > 0 {
-            let mut ptr = cuda_malloc(size)?;
-            cuda::cuMemsetD8_v2(ptr.as_raw_mut() as u64, 0, size * mem::size_of::<T>())
-                .to_result()?;
-            ptr
+            unsafe {
+                let mut ptr = cuda_malloc(size)?;
+                cuda::cuMemsetD8_v2(ptr.as_raw_mut() as u64, 0, size * mem::size_of::<T>())
+                    .to_result()?;
+                ptr
+            }
         } else {
-            DevicePointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
+            unsafe { DevicePointer::wrap(std::ptr::NonNull::dangling().as_ptr() as *mut T) }
         };
+        
         Ok(DeviceBuffer {
             buf: ptr,
             capacity: size,
@@ -186,11 +187,9 @@ impl<T> DeviceBuffer<T> {
     /// let mut buffer = DeviceBuffer::from_slice(&values).unwrap();
     /// ```
     pub fn from_slice(slice: &[T]) -> CudaResult<Self> {
-        unsafe {
-            let mut uninit = DeviceBuffer::uninitialized(slice.len())?;
-            uninit.copy_from(slice)?;
-            Ok(uninit)
-        }
+        let mut uninit = DeviceBuffer::uninitialized(slice.len())?;
+        uninit.copy_from(slice)?;
+        Ok(uninit)
     }
 
     /// Asynchronously allocate a new buffer of the same size as `slice`, initialized
@@ -213,13 +212,11 @@ impl<T> DeviceBuffer<T> {
     ///
     /// let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
     /// let values = [0u64; 5];
-    /// unsafe {
-    ///     let mut buffer = DeviceBuffer::from_slice_async(&values, &stream).unwrap();
-    ///     stream.synchronize();
-    ///     // Perform some operation on the buffer
-    /// }
+    /// let mut buffer = DeviceBuffer::from_slice_async(&values, &stream).unwrap();
+    /// stream.synchronize();
+    /// // Perform some operation on the buffer
     /// ```
-    pub unsafe fn from_slice_async(slice: &[T], stream: &Stream) -> CudaResult<Self> {
+    pub fn from_slice_async(slice: &[T], stream: &Stream) -> CudaResult<Self> {
         let mut uninit = DeviceBuffer::uninitialized(slice.len())?;
         uninit.async_copy_from(slice, stream)?;
         Ok(uninit)
@@ -294,10 +291,8 @@ mod test_device_buffer {
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
         let start = [0u64, 1, 2, 3, 4, 5];
         let mut end = [0u64, 0, 0, 0, 0, 0];
-        unsafe {
-            let buf = DeviceBuffer::from_slice_async(&start, &stream).unwrap();
-            buf.async_copy_to(&mut end, &stream).unwrap();
-        }
+        let buf = DeviceBuffer::from_slice_async(&start, &stream).unwrap();
+        buf.async_copy_to(&mut end, &stream).unwrap();
         stream.synchronize().unwrap();
         assert_eq!(start, end);
     }
@@ -319,13 +314,11 @@ mod test_device_buffer {
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
         let start = [0u64, 1, 2, 3, 4, 5];
         let mut end = [0u64, 0];
-        unsafe {
-            let mut buf = DeviceBuffer::from_slice_async(&[0u64, 0, 0, 0], &stream).unwrap();
-            buf.async_copy_from(&start[0..4], &stream).unwrap();
-            buf[0..2].async_copy_to(&mut end, &stream).unwrap();
-            stream.synchronize().unwrap();
-            assert_eq!(start[0..2], end);
-        }
+        let mut buf = DeviceBuffer::from_slice_async(&[0u64, 0, 0, 0], &stream).unwrap();
+        buf.async_copy_from(&start[0..4], &stream).unwrap();
+        buf[0..2].async_copy_to(&mut end, &stream).unwrap();
+        stream.synchronize().unwrap();
+        assert_eq!(start[0..2], end);
     }
 
     #[test]
@@ -342,11 +335,9 @@ mod test_device_buffer {
     fn test_async_copy_to_d2h_wrong_size() {
         let _context = crate::quick_init().unwrap();
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
-        unsafe {
-            let buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
-            let mut end = [0u64, 1, 2, 3, 4];
-            let _ = buf.async_copy_to(&mut end, &stream);
-        }
+        let buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
+        let mut end = [0u64, 1, 2, 3, 4];
+        let _ = buf.async_copy_to(&mut end, &stream);
     }
 
     #[test]
@@ -364,10 +355,8 @@ mod test_device_buffer {
         let _context = crate::quick_init().unwrap();
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
         let start = [0u64, 1, 2, 3, 4];
-        unsafe {
-            let mut buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
-            let _ = buf.async_copy_from(&start, &stream);
-        }
+        let mut buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
+        let _ = buf.async_copy_from(&start, &stream);
     }
 
     #[test]
@@ -387,17 +376,15 @@ mod test_device_buffer {
     fn test_async_copy_device_slice_to_device() {
         let _context = crate::quick_init().unwrap();
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
-        unsafe {
-            let start = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
-            let mut mid = DeviceBuffer::from_slice_async(&[0u64, 0, 0, 0], &stream).unwrap();
-            let mut end = DeviceBuffer::from_slice_async(&[0u64, 0], &stream).unwrap();
-            let mut host_end = [0u64, 0];
-            start[1..5].async_copy_to(&mut mid, &stream).unwrap();
-            end.async_copy_from(&mid[1..3], &stream).unwrap();
-            end.async_copy_to(&mut host_end, &stream).unwrap();
-            stream.synchronize().unwrap();
-            assert_eq!([2u64, 3], host_end);
-        }
+        let start = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
+        let mut mid = DeviceBuffer::from_slice_async(&[0u64, 0, 0, 0], &stream).unwrap();
+        let mut end = DeviceBuffer::from_slice_async(&[0u64, 0], &stream).unwrap();
+        let mut host_end = [0u64, 0];
+        start[1..5].async_copy_to(&mut mid, &stream).unwrap();
+        end.async_copy_from(&mid[1..3], &stream).unwrap();
+        end.async_copy_to(&mut host_end, &stream).unwrap();
+        stream.synchronize().unwrap();
+        assert_eq!([2u64, 3], host_end);
     }
 
     #[test]
@@ -414,11 +401,9 @@ mod test_device_buffer {
     fn test_async_copy_to_d2d_wrong_size() {
         let _context = crate::quick_init().unwrap();
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
-        unsafe {
-            let buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
-            let mut end = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4], &stream).unwrap();
-            let _ = buf.async_copy_to(&mut end, &stream);
-        }
+        let buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
+        let mut end = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4], &stream).unwrap();
+        let _ = buf.async_copy_to(&mut end, &stream);
     }
 
     #[test]
@@ -435,21 +420,17 @@ mod test_device_buffer {
     fn test_async_copy_from_d2d_wrong_size() {
         let _context = crate::quick_init().unwrap();
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
-        unsafe {
-            let mut buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
-            let start = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4], &stream).unwrap();
-            let _ = buf.async_copy_from(&start, &stream);
-        }
+        let mut buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
+        let start = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4], &stream).unwrap();
+        let _ = buf.async_copy_from(&start, &stream);
     }
 
     #[test]
     fn test_can_create_uninitialized_buffers() {
         let _context = crate::quick_init().unwrap();
-        unsafe {
-            let _box: DeviceBox<Vec<u8>> = DeviceBox::uninitialized().unwrap();
-            let buffer: DeviceBuffer<Vec<u8>> = DeviceBuffer::uninitialized(10).unwrap();
-            let _slice = &buffer[0..5];
-        }
+        let _box: DeviceBox<Vec<u8>> = DeviceBox::uninitialized().unwrap();
+        let buffer: DeviceBuffer<Vec<u8>> = DeviceBuffer::uninitialized(10).unwrap();
+        let _slice = &buffer[0..5];
     }
 
     #[test]
@@ -463,10 +444,9 @@ mod test_device_buffer {
             .unwrap();
 
         // Don't allocate all memory to leave some space for the display's frame buffer
-        let allocation_size = (total_memory * 3) / 4 / mem::size_of::<u64>();
-        unsafe {
-            // Test if allocation fails with an out-of-memory error
-            let _buffer = DeviceBuffer::<u64>::uninitialized(allocation_size).unwrap();
-        };
+        let allocation_size = total_memory / 4 / mem::size_of::<u64>();
+
+        // Test if allocation fails with an out-of-memory error
+        let _buffer = DeviceBuffer::<u64>::uninitialized(allocation_size).unwrap();
     }
 }

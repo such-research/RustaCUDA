@@ -42,7 +42,7 @@ impl<T> UnifiedBox<T> {
                 ptr: UnifiedPointer::null(),
             })
         } else {
-            let mut ubox = unsafe { UnifiedBox::uninitialized()? };
+            let mut ubox = UnifiedBox::uninitialized()?;
             *ubox = val;
             Ok(ubox)
         }
@@ -67,16 +67,16 @@ impl<T> UnifiedBox<T> {
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
-    /// let mut five = unsafe{ UnifiedBox::uninitialized().unwrap() };
+    /// let mut five = UnifiedBox::uninitialized().unwrap();
     /// *five = 5u64;
     /// ```
-    pub unsafe fn uninitialized() -> CudaResult<Self> {
+    pub fn uninitialized() -> CudaResult<Self> {
         if mem::size_of::<T>() == 0 {
             Ok(UnifiedBox {
                 ptr: UnifiedPointer::null(),
             })
         } else {
-            let ptr = cuda_malloc_unified(1)?;
+            let ptr = unsafe { cuda_malloc_unified(1)? };
             Ok(UnifiedBox { ptr })
         }
     }
@@ -129,9 +129,9 @@ impl<T> UnifiedBox<T> {
     /// use rustacuda::memory::*;
     /// let x = UnifiedBox::new(5).unwrap();
     /// let ptr = UnifiedBox::into_unified(x);
-    /// let x = unsafe { UnifiedBox::from_unified(ptr) };
+    /// let x = UnifiedBox::from_unified(ptr);
     /// ```
-    pub unsafe fn from_unified(ptr: UnifiedPointer<T>) -> Self {
+    pub fn from_unified(ptr: UnifiedPointer<T>) -> Self {
         UnifiedBox { ptr }
     }
 
@@ -401,16 +401,16 @@ impl<T> UnifiedBuffer<T> {
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
-    /// let mut buffer = unsafe { UnifiedBuffer::uninitialized(5).unwrap() };
+    /// let mut buffer = UnifiedBuffer::uninitialized(5).unwrap();
     /// for i in buffer.iter_mut() {
     ///     *i = 0u64;
     /// }
     /// ```
-    pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
+    pub fn uninitialized(size: usize) -> CudaResult<Self> {
         let ptr = if size > 0 && mem::size_of::<T>() > 0 {
-            cuda_malloc_unified(size)?
+            unsafe { cuda_malloc_unified(size)? }
         } else {
-            UnifiedPointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
+            unsafe { UnifiedPointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T) }
         };
         Ok(UnifiedBuffer {
             buf: ptr,
@@ -613,7 +613,7 @@ mod test_unified_box {
         let x = UnifiedBox::new(5u64).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         assert!(!ptr.is_null());
-        let _ = unsafe { UnifiedBox::from_unified(ptr) };
+        let _ = UnifiedBox::from_unified(ptr);
     }
 
     #[test]
@@ -622,7 +622,7 @@ mod test_unified_box {
         let x = UnifiedBox::new(ZeroSizedType).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         assert!(ptr.is_null());
-        let _ = unsafe { UnifiedBox::from_unified(ptr) };
+        let _ = UnifiedBox::from_unified(ptr);
     }
 
     #[test]
@@ -630,7 +630,7 @@ mod test_unified_box {
         let _context = crate::quick_init().unwrap();
         let x = UnifiedBox::new(5u64).unwrap();
         let ptr = UnifiedBox::into_unified(x);
-        let _ = unsafe { UnifiedBox::from_unified(ptr) };
+        let _ = UnifiedBox::from_unified(ptr);
     }
 
     #[test]

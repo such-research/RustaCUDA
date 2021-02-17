@@ -86,14 +86,14 @@ impl<T> LockedBuffer<T> {
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
-    /// let mut buffer = unsafe { LockedBuffer::uninitialized(5).unwrap() };
+    /// let mut buffer = LockedBuffer::uninitialized(5).unwrap();
     /// for i in buffer.iter_mut() {
     ///     *i = 0u64;
     /// }
     /// ```
-    pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
+    pub fn uninitialized(size: usize) -> CudaResult<Self> {
         let ptr: *mut T = if size > 0 && mem::size_of::<T>() > 0 {
-            cuda_malloc_locked(size)?
+            unsafe { cuda_malloc_locked(size)? }
         } else {
             ptr::NonNull::dangling().as_ptr()
         };
@@ -333,9 +333,8 @@ mod test {
 
         // Placeholder - read out available system memory here
         let allocation_size = 1;
-        unsafe {
-            // Test if allocation fails with an out-of-memory error
-            let _buffer = LockedBuffer::<u64>::uninitialized(allocation_size).unwrap();
-        }
+        
+        // Test if allocation fails with an out-of-memory error
+        let _buffer = LockedBuffer::<u64>::uninitialized(allocation_size).unwrap();
     }
 }

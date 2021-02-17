@@ -57,7 +57,7 @@ pub trait AsyncCopyDestination<O: ?Sized>: crate::private::Sealed {
     /// # Errors
     ///
     /// If a CUDA error occurs, return the error.
-    unsafe fn async_copy_from(&mut self, source: &O, stream: &Stream) -> CudaResult<()>;
+    fn async_copy_from(&mut self, source: &O, stream: &Stream) -> CudaResult<()>;
 
     /// Asynchronously copy data to `dest`. `dest` must be the same size as `self`.
     ///
@@ -70,5 +70,5 @@ pub trait AsyncCopyDestination<O: ?Sized>: crate::private::Sealed {
     /// # Errors
     ///
     /// If a CUDA error occurs, return the error.
-    unsafe fn async_copy_to(&self, dest: &mut O, stream: &Stream) -> CudaResult<()>;
+    fn async_copy_to(&self, dest: &mut O, stream: &Stream) -> CudaResult<()>;
 }
