@@ -21,6 +21,7 @@ pub struct GridSize {
     /// Depth of grid in blocks
     pub z: u32,
 }
+
 impl GridSize {
     /// Create a one-dimensional grid of `x` blocks
     #[inline]
@@ -40,21 +41,25 @@ impl GridSize {
         GridSize { x, y, z }
     }
 }
+
 impl From<u32> for GridSize {
     fn from(x: u32) -> GridSize {
         GridSize::x(x)
     }
 }
+
 impl From<(u32, u32)> for GridSize {
     fn from((x, y): (u32, u32)) -> GridSize {
         GridSize::xy(x, y)
     }
 }
+
 impl From<(u32, u32, u32)> for GridSize {
     fn from((x, y, z): (u32, u32, u32)) -> GridSize {
         GridSize::xyz(x, y, z)
     }
 }
+
 impl<'a> From<&'a GridSize> for GridSize {
     fn from(other: &GridSize) -> GridSize {
         other.clone()
@@ -77,6 +82,7 @@ pub struct BlockSize {
     /// Z dimension of each thread block
     pub z: u32,
 }
+
 impl BlockSize {
     /// Create a one-dimensional block of `x` threads
     #[inline]
@@ -96,21 +102,25 @@ impl BlockSize {
         BlockSize { x, y, z }
     }
 }
+
 impl From<u32> for BlockSize {
     fn from(x: u32) -> BlockSize {
         BlockSize::x(x)
     }
 }
+
 impl From<(u32, u32)> for BlockSize {
     fn from((x, y): (u32, u32)) -> BlockSize {
         BlockSize::xy(x, y)
     }
 }
+
 impl From<(u32, u32, u32)> for BlockSize {
     fn from((x, y, z): (u32, u32, u32)) -> BlockSize {
         BlockSize::xyz(x, y, z)
     }
 }
+
 impl<'a> From<&'a BlockSize> for BlockSize {
     fn from(other: &BlockSize) -> BlockSize {
         other.clone()
@@ -159,6 +169,7 @@ pub struct Function<'a> {
     inner: CUfunction,
     module: PhantomData<&'a Module>,
 }
+
 impl<'a> Function<'a> {
     pub(crate) fn new(inner: CUfunction, _module: &Module) -> Function {
         Function {

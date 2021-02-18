@@ -14,6 +14,7 @@ pub struct LockedBuffer<T> {
     buf: *mut T,
     capacity: usize,
 }
+
 impl<T: Clone> LockedBuffer<T> {
     /// Allocate a new page-locked buffer large enough to hold `size` `T`'s and initialized with
     /// clones of `value`.
@@ -67,6 +68,7 @@ impl<T: Clone> LockedBuffer<T> {
         }
     }
 }
+
 impl<T> LockedBuffer<T> {
     /// Allocate a new page-locked buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
@@ -227,11 +229,13 @@ impl<T> AsRef<[T]> for LockedBuffer<T> {
         self
     }
 }
+
 impl<T> AsMut<[T]> for LockedBuffer<T> {
     fn as_mut(&mut self) -> &mut [T] {
         self
     }
 }
+
 impl<T> ops::Deref for LockedBuffer<T> {
     type Target = [T];
 
@@ -242,6 +246,7 @@ impl<T> ops::Deref for LockedBuffer<T> {
         }
     }
 }
+
 impl<T> ops::DerefMut for LockedBuffer<T> {
     fn deref_mut(&mut self) -> &mut [T] {
         unsafe {
@@ -250,6 +255,7 @@ impl<T> ops::DerefMut for LockedBuffer<T> {
         }
     }
 }
+
 impl<T> Drop for LockedBuffer<T> {
     fn drop(&mut self) {
         if self.buf.is_null() {
@@ -333,7 +339,7 @@ mod test {
 
         // Placeholder - read out available system memory here
         let allocation_size = 1;
-        
+
         // Test if allocation fails with an out-of-memory error
         let _buffer = LockedBuffer::<u64>::uninitialized(allocation_size).unwrap();
     }

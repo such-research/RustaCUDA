@@ -87,6 +87,7 @@ pub enum CudaError {
     #[doc(hidden)]
     __Nonexhaustive,
 }
+
 impl fmt::Display for CudaError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -108,6 +109,7 @@ impl fmt::Display for CudaError {
         }
     }
 }
+
 impl Error for CudaError {}
 
 /// Result type for most CUDA functions.
@@ -119,6 +121,7 @@ pub type DropResult<T> = Result<(), (CudaError, T)>;
 pub(crate) trait ToResult {
     fn to_result(self) -> CudaResult<()>;
 }
+
 impl ToResult for cudaError_t {
     fn to_result(self) -> CudaResult<()> {
         match self {

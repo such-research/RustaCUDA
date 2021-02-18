@@ -201,6 +201,7 @@ pub enum DeviceAttribute {
 pub struct Device {
     pub(crate) device: CUdevice,
 }
+
 impl Device {
     /// Get the number of CUDA-capable devices.
     ///
@@ -368,6 +369,7 @@ impl Device {
 pub struct Devices {
     range: Range<u32>,
 }
+
 impl Iterator for Devices {
     type Item = CudaResult<Device>;
 

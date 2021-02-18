@@ -17,6 +17,7 @@ use std::os::raw::c_void;
 pub struct DeviceBox<T> {
     ptr: DevicePointer<T>,
 }
+
 impl<T> DeviceBox<T> {
     /// Allocate device memory and place val into it.
     ///
@@ -39,6 +40,7 @@ impl<T> DeviceBox<T> {
         Ok(dev_box)
     }
 }
+
 impl<T> DeviceBox<T> {
     /// Allocate device memory, but do not initialize it.
     ///
@@ -237,6 +239,7 @@ impl<T> DeviceBox<T> {
         }
     }
 }
+
 impl<T> Drop for DeviceBox<T> {
     fn drop(&mut self) {
         if self.ptr.is_null() {
@@ -250,11 +253,13 @@ impl<T> Drop for DeviceBox<T> {
         }
     }
 }
+
 impl<T> Pointer for DeviceBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
+
 impl<T> crate::private::Sealed for DeviceBox<T> {}
 impl<T> CopyDestination<T> for DeviceBox<T> {
     fn copy_from(&mut self, val: &T) -> CudaResult<()> {
@@ -287,6 +292,7 @@ impl<T> CopyDestination<T> for DeviceBox<T> {
         Ok(())
     }
 }
+
 impl<T> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
     fn copy_from(&mut self, val: &DeviceBox<T>) -> CudaResult<()> {
         let size = mem::size_of::<T>();
@@ -310,6 +316,7 @@ impl<T> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
         Ok(())
     }
 }
+
 impl<T> AsyncCopyDestination<DeviceBox<T>> for DeviceBox<T> {
     fn async_copy_from(&mut self, val: &DeviceBox<T>, stream: &Stream) -> CudaResult<()> {
         let size = mem::size_of::<T>();

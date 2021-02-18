@@ -239,6 +239,7 @@ bitflags! {
 pub struct Context {
     inner: CUcontext,
 }
+
 impl Context {
     /// Create a CUDA context for the given device.
     ///
@@ -368,6 +369,7 @@ impl Context {
         }
     }
 }
+
 impl Drop for Context {
     fn drop(&mut self) {
         if self.inner.is_null() {
@@ -389,13 +391,17 @@ pub trait ContextHandle: Sealed {
     #[doc(hidden)]
     fn get_inner(&self) -> CUcontext;
 }
+
 impl Sealed for Context {}
+
 impl ContextHandle for Context {
     fn get_inner(&self) -> CUcontext {
         self.inner
     }
 }
+
 impl Sealed for UnownedContext {}
+
 impl ContextHandle for UnownedContext {
     fn get_inner(&self) -> CUcontext {
         self.inner
@@ -407,8 +413,11 @@ impl ContextHandle for UnownedContext {
 pub struct UnownedContext {
     inner: CUcontext,
 }
+
 unsafe impl Send for UnownedContext {}
+
 unsafe impl Sync for UnownedContext {}
+
 impl UnownedContext {
     /// Get the API version used to create this context.
     ///
@@ -514,6 +523,7 @@ pub struct StreamPriorityRange {
 /// Type representing the top context in the thread-local stack.
 #[derive(Debug)]
 pub struct CurrentContext;
+
 impl CurrentContext {
     /// Returns the preferred cache configuration for the current context.
     ///

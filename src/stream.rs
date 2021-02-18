@@ -57,6 +57,7 @@ bitflags! {
 pub struct Stream {
     inner: CUstream,
 }
+
 impl Stream {
     /// Create a new stream with the given flags and optional priority.
     ///
@@ -339,6 +340,7 @@ impl Stream {
         }
     }
 }
+
 impl Drop for Stream {
     fn drop(&mut self) {
         if self.inner.is_null() {
@@ -354,6 +356,7 @@ impl Drop for Stream {
         }
     }
 }
+
 unsafe extern "C" fn callback_wrapper<T>(
     _stream: CUstream,
     status: cudaError_t,

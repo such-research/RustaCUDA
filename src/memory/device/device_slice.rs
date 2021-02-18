@@ -17,6 +17,7 @@ use std::slice::{self, Chunks, ChunksMut};
 #[derive(Debug)]
 #[repr(C)]
 pub struct DeviceSlice<T>([T]);
+
 // This works by faking a regular slice out of the device raw-pointer and the length and transmuting
 // I have no idea if this is safe or not. Probably not, though I can't imagine how the compiler
 // could possibly know that the pointer is not de-referenceable. I'm banking that we get proper
@@ -113,7 +114,7 @@ impl<T> DeviceSlice<T> {
         let (left, right) = self.0.split_at(mid);
         (
             DeviceSlice::from_slice(left),
-            DeviceSlice::from_slice(right)
+            DeviceSlice::from_slice(right),
         )
     }
 
@@ -315,9 +316,7 @@ impl<'a, T> Iterator for DeviceChunks<'a, T> {
     type Item = &'a DeviceSlice<T>;
 
     fn next(&mut self) -> Option<&'a DeviceSlice<T>> {
-        self.0
-            .next()
-            .map(|slice| DeviceSlice::from_slice(slice))
+        self.0.next().map(|slice| DeviceSlice::from_slice(slice))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -329,18 +328,15 @@ impl<'a, T> Iterator for DeviceChunks<'a, T> {
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.0
-            .nth(n)
-            .map(|slice| DeviceSlice::from_slice(slice))
+        self.0.nth(n).map(|slice| DeviceSlice::from_slice(slice))
     }
 
     #[inline]
     fn last(self) -> Option<Self::Item> {
-        self.0
-            .last()
-            .map(|slice| DeviceSlice::from_slice(slice))
+        self.0.last().map(|slice| DeviceSlice::from_slice(slice))
     }
 }
+
 impl<'a, T> DoubleEndedIterator for DeviceChunks<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<&'a DeviceSlice<T>> {
@@ -349,7 +345,9 @@ impl<'a, T> DoubleEndedIterator for DeviceChunks<'a, T> {
             .map(|slice| DeviceSlice::from_slice(slice))
     }
 }
+
 impl<'a, T> ExactSizeIterator for DeviceChunks<'a, T> {}
+
 impl<'a, T> FusedIterator for DeviceChunks<'a, T> {}
 
 /// An iterator over a [`DeviceSlice`](struct.DeviceSlice.html) in (non-overlapping) mutable chunks
@@ -399,7 +397,9 @@ impl<'a, T> DoubleEndedIterator for DeviceChunksMut<'a, T> {
             .map(|slice| DeviceSlice::from_slice_mut(slice))
     }
 }
+
 impl<'a, T> ExactSizeIterator for DeviceChunksMut<'a, T> {}
+
 impl<'a, T> FusedIterator for DeviceChunksMut<'a, T> {}
 
 macro_rules! impl_index {
@@ -434,6 +434,7 @@ impl_index! {
 }
 
 impl<T> crate::private::Sealed for DeviceSlice<T> {}
+
 impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &I) -> CudaResult<()> {
         let val = val.as_ref();
@@ -471,6 +472,7 @@ impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<
         Ok(())
     }
 }
+
 impl<T> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &DeviceSlice<T>) -> CudaResult<()> {
         assert!(
@@ -502,6 +504,7 @@ impl<T> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         Ok(())
     }
 }
+
 impl<T> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &DeviceBuffer<T>) -> CudaResult<()> {
         self.copy_from(val as &DeviceSlice<T>)
@@ -511,9 +514,8 @@ impl<T> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
         self.copy_to(val as &mut DeviceSlice<T>)
     }
 }
-impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
-    for DeviceSlice<T>
-{
+
+impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I> for DeviceSlice<T> {
     fn async_copy_from(&mut self, val: &I, stream: &Stream) -> CudaResult<()> {
         let val = val.as_ref();
         assert!(
@@ -556,6 +558,7 @@ impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
         Ok(())
     }
 }
+
 impl<T> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
     fn async_copy_from(&mut self, val: &DeviceSlice<T>, stream: &Stream) -> CudaResult<()> {
         assert!(
@@ -597,6 +600,7 @@ impl<T> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         Ok(())
     }
 }
+
 impl<T> AsyncCopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
     fn async_copy_from(&mut self, val: &DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
         self.async_copy_from(val as &DeviceSlice<T>, stream)

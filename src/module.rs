@@ -15,6 +15,7 @@ use std::ptr;
 pub struct Module {
     inner: cuda::CUmodule,
 }
+
 impl Module {
     /// Load a module from the given file name into the current context.
     ///
@@ -208,6 +209,7 @@ impl Module {
         }
     }
 }
+
 impl Drop for Module {
     fn drop(&mut self) {
         if self.inner.is_null() {
@@ -229,12 +231,15 @@ pub struct Symbol<'a, T> {
     ptr: DevicePointer<T>,
     module: PhantomData<&'a Module>,
 }
+
 impl<'a, T> crate::private::Sealed for Symbol<'a, T> {}
+
 impl<'a, T> fmt::Pointer for Symbol<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
+
 impl<'a, T> CopyDestination<T> for Symbol<'a, T> {
     fn copy_from(&mut self, val: &T) -> CudaResult<()> {
         let size = mem::size_of::<T>();

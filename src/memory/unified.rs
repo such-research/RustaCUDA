@@ -20,6 +20,7 @@ use std::slice;
 pub struct UnifiedBox<T> {
     ptr: UnifiedPointer<T>,
 }
+
 impl<T> UnifiedBox<T> {
     /// Allocate unified memory and place val into it.
     ///
@@ -233,6 +234,7 @@ impl<T> UnifiedBox<T> {
         }
     }
 }
+
 impl<T> Drop for UnifiedBox<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
@@ -250,21 +252,25 @@ impl<T> Borrow<T> for UnifiedBox<T> {
         &**self
     }
 }
+
 impl<T> BorrowMut<T> for UnifiedBox<T> {
     fn borrow_mut(&mut self) -> &mut T {
         &mut **self
     }
 }
+
 impl<T> AsRef<T> for UnifiedBox<T> {
     fn as_ref(&self) -> &T {
         &**self
     }
 }
+
 impl<T> AsMut<T> for UnifiedBox<T> {
     fn as_mut(&mut self) -> &mut T {
         &mut **self
     }
 }
+
 impl<T> Deref for UnifiedBox<T> {
     type Target = T;
 
@@ -272,27 +278,33 @@ impl<T> Deref for UnifiedBox<T> {
         unsafe { &*self.ptr.as_raw() }
     }
 }
+
 impl<T> DerefMut for UnifiedBox<T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut *self.ptr.as_raw_mut() }
     }
 }
+
 impl<T: Display> Display for UnifiedBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&**self, f)
     }
 }
+
 impl<T> Pointer for UnifiedBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
+
 impl<T: PartialEq> PartialEq for UnifiedBox<T> {
     fn eq(&self, other: &UnifiedBox<T>) -> bool {
         PartialEq::eq(&**self, &**other)
     }
 }
+
 impl<T: Eq> Eq for UnifiedBox<T> {}
+
 impl<T: PartialOrd> PartialOrd for UnifiedBox<T> {
     fn partial_cmp(&self, other: &UnifiedBox<T>) -> Option<Ordering> {
         PartialOrd::partial_cmp(&**self, &**other)
@@ -310,11 +322,13 @@ impl<T: PartialOrd> PartialOrd for UnifiedBox<T> {
         PartialOrd::gt(&**self, &**other)
     }
 }
+
 impl<T: Ord> Ord for UnifiedBox<T> {
     fn cmp(&self, other: &UnifiedBox<T>) -> Ordering {
         Ord::cmp(&**self, &**other)
     }
 }
+
 impl<T: Hash> Hash for UnifiedBox<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         (**self).hash(state);
@@ -329,6 +343,7 @@ pub struct UnifiedBuffer<T> {
     buf: UnifiedPointer<T>,
     capacity: usize,
 }
+
 impl<T: Clone> UnifiedBuffer<T> {
     /// Allocate a new unified buffer large enough to hold `size` `T`'s and initialized with
     /// clones of `value`.
@@ -382,6 +397,7 @@ impl<T: Clone> UnifiedBuffer<T> {
         }
     }
 }
+
 impl<T> UnifiedBuffer<T> {
     /// Allocate a new unified buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
@@ -551,11 +567,13 @@ impl<T> AsRef<[T]> for UnifiedBuffer<T> {
         self
     }
 }
+
 impl<T> AsMut<[T]> for UnifiedBuffer<T> {
     fn as_mut(&mut self) -> &mut [T] {
         self
     }
 }
+
 impl<T> Deref for UnifiedBuffer<T> {
     type Target = [T];
 
@@ -566,6 +584,7 @@ impl<T> Deref for UnifiedBuffer<T> {
         }
     }
 }
+
 impl<T> DerefMut for UnifiedBuffer<T> {
     fn deref_mut(&mut self) -> &mut [T] {
         unsafe {
@@ -574,6 +593,7 @@ impl<T> DerefMut for UnifiedBuffer<T> {
         }
     }
 }
+
 impl<T> Drop for UnifiedBuffer<T> {
     fn drop(&mut self) {
         if self.buf.is_null() {

@@ -13,6 +13,7 @@ pub struct DeviceBuffer<T> {
     buf: DevicePointer<T>,
     capacity: usize,
 }
+
 impl<T> DeviceBuffer<T> {
     /// Allocate a new device buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
@@ -82,7 +83,7 @@ impl<T> DeviceBuffer<T> {
         } else {
             unsafe { DevicePointer::wrap(std::ptr::NonNull::dangling().as_ptr() as *mut T) }
         };
-        
+
         Ok(DeviceBuffer {
             buf: ptr,
             capacity: size,
@@ -169,8 +170,7 @@ impl<T> DeviceBuffer<T> {
             Ok(())
         }
     }
-}
-impl<T> DeviceBuffer<T> {
+
     /// Allocate a new device buffer of the same size as `slice`, initialized with a clone of
     /// the data in `slice`.
     ///
@@ -222,6 +222,7 @@ impl<T> DeviceBuffer<T> {
         Ok(uninit)
     }
 }
+
 impl<T> Deref for DeviceBuffer<T> {
     type Target = DeviceSlice<T>;
 
@@ -234,6 +235,7 @@ impl<T> Deref for DeviceBuffer<T> {
         }
     }
 }
+
 impl<T> DerefMut for DeviceBuffer<T> {
     fn deref_mut(&mut self) -> &mut DeviceSlice<T> {
         unsafe {
@@ -242,6 +244,7 @@ impl<T> DerefMut for DeviceBuffer<T> {
         }
     }
 }
+
 impl<T> Drop for DeviceBuffer<T> {
     fn drop(&mut self) {
         if self.buf.is_null() {
