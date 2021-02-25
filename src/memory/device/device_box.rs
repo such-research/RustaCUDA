@@ -4,7 +4,7 @@ use crate::memory::device::CopyDestination;
 use crate::memory::malloc::{cuda_free, cuda_malloc};
 use crate::memory::DevicePointer;
 use crate::stream::Stream;
-use cuda_sys::cuda;
+use cuda_driver_sys::*;
 use std::fmt::{self, Pointer};
 use std::mem;
 
@@ -95,7 +95,7 @@ impl<T> DeviceBox<T> {
         let mut new_box = DeviceBox::uninitialized()?;
         if mem::size_of::<T>() != 0 {
             unsafe {
-                cuda::cuMemsetD8_v2(
+                cuMemsetD8_v2(
                     new_box.as_device_ptr().as_raw_mut() as u64,
                     0,
                     mem::size_of::<T>(),
@@ -266,7 +266,7 @@ impl<T> CopyDestination<T> for DeviceBox<T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyHtoD_v2(
+                cuMemcpyHtoD_v2(
                     self.ptr.as_raw_mut() as u64,
                     val as *const T as *const c_void,
                     size,
@@ -281,7 +281,7 @@ impl<T> CopyDestination<T> for DeviceBox<T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoH_v2(
+                cuMemcpyDtoH_v2(
                     val as *const T as *mut c_void,
                     self.ptr.as_raw() as u64,
                     size,
@@ -298,7 +298,7 @@ impl<T> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoD_v2(self.ptr.as_raw_mut() as u64, val.ptr.as_raw() as u64, size)
+                cuMemcpyDtoD_v2(self.ptr.as_raw_mut() as u64, val.ptr.as_raw() as u64, size)
                     .to_result()?
             }
         }
@@ -309,7 +309,7 @@ impl<T> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoD_v2(val.ptr.as_raw_mut() as u64, self.ptr.as_raw() as u64, size)
+                cuMemcpyDtoD_v2(val.ptr.as_raw_mut() as u64, self.ptr.as_raw() as u64, size)
                     .to_result()?
             }
         }
@@ -322,7 +322,7 @@ impl<T> AsyncCopyDestination<DeviceBox<T>> for DeviceBox<T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoDAsync_v2(
+                cuMemcpyDtoDAsync_v2(
                     self.ptr.as_raw_mut() as u64,
                     val.ptr.as_raw() as u64,
                     size,
@@ -338,7 +338,7 @@ impl<T> AsyncCopyDestination<DeviceBox<T>> for DeviceBox<T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoDAsync_v2(
+                cuMemcpyDtoDAsync_v2(
                     val.ptr.as_raw_mut() as u64,
                     self.ptr.as_raw() as u64,
                     size,

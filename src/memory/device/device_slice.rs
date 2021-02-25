@@ -3,7 +3,7 @@ use crate::memory::device::AsyncCopyDestination;
 use crate::memory::device::{CopyDestination, DeviceBuffer};
 use crate::memory::DevicePointer;
 use crate::stream::Stream;
-use cuda_sys::cuda;
+use cuda_driver_sys::*;
 use std::iter::{ExactSizeIterator, FusedIterator};
 use std::mem;
 use std::ops::{
@@ -445,7 +445,7 @@ impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyHtoD_v2(
+                cuMemcpyHtoD_v2(
                     self.0.as_mut_ptr() as u64,
                     val.as_ptr() as *const c_void,
                     size,
@@ -465,7 +465,7 @@ impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoH_v2(val.as_mut_ptr() as *mut c_void, self.as_ptr() as u64, size)
+                cuMemcpyDtoH_v2(val.as_mut_ptr() as *mut c_void, self.as_ptr() as u64, size)
                     .to_result()?
             }
         }
@@ -482,7 +482,7 @@ impl<T> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoD_v2(self.0.as_mut_ptr() as u64, val.as_ptr() as u64, size)
+                cuMemcpyDtoD_v2(self.0.as_mut_ptr() as u64, val.as_ptr() as u64, size)
                     .to_result()?
             }
         }
@@ -497,8 +497,7 @@ impl<T> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoD_v2(val.as_mut_ptr() as u64, self.as_ptr() as u64, size)
-                    .to_result()?
+                cuMemcpyDtoD_v2(val.as_mut_ptr() as u64, self.as_ptr() as u64, size).to_result()?
             }
         }
         Ok(())
@@ -525,7 +524,7 @@ impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I> for DeviceS
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyHtoDAsync_v2(
+                cuMemcpyHtoDAsync_v2(
                     self.0.as_mut_ptr() as u64,
                     val.as_ptr() as *const c_void,
                     size,
@@ -546,7 +545,7 @@ impl<T, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I> for DeviceS
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoHAsync_v2(
+                cuMemcpyDtoHAsync_v2(
                     val.as_mut_ptr() as *mut c_void,
                     self.as_ptr() as u64,
                     size,
@@ -568,7 +567,7 @@ impl<T> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoDAsync_v2(
+                cuMemcpyDtoDAsync_v2(
                     self.0.as_mut_ptr() as u64,
                     val.as_ptr() as u64,
                     size,
@@ -588,7 +587,7 @@ impl<T> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoDAsync_v2(
+                cuMemcpyDtoDAsync_v2(
                     val.as_mut_ptr() as u64,
                     self.as_ptr() as u64,
                     size,

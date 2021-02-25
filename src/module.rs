@@ -3,7 +3,7 @@
 use crate::error::{CudaResult, DropResult, ToResult};
 use crate::function::Function;
 use crate::memory::{CopyDestination, DevicePointer};
-use cuda_sys::cuda;
+use cuda_driver_sys::*;
 use std::ffi::{c_void, CStr};
 use std::fmt;
 use std::marker::PhantomData;
@@ -13,7 +13,7 @@ use std::ptr;
 /// A compiled CUDA module, loaded into a context.
 #[derive(Debug)]
 pub struct Module {
-    inner: cuda::CUmodule,
+    inner: CUmodule,
 }
 
 impl Module {
@@ -42,8 +42,7 @@ impl Module {
             let mut module = Module {
                 inner: ptr::null_mut(),
             };
-            cuda::cuModuleLoad(&mut module.inner as *mut cuda::CUmodule, filename.as_ptr())
-                .to_result()?;
+            cuModuleLoad(&mut module.inner as *mut CUmodule, filename.as_ptr()).to_result()?;
             Ok(module)
         }
     }
@@ -76,8 +75,8 @@ impl Module {
             let mut module = Module {
                 inner: ptr::null_mut(),
             };
-            cuda::cuModuleLoadData(
-                &mut module.inner as *mut cuda::CUmodule,
+            cuModuleLoadData(
+                &mut module.inner as *mut CUmodule,
                 image.as_ptr() as *const c_void,
             )
             .to_result()?;
@@ -117,8 +116,8 @@ impl Module {
             let mut ptr: DevicePointer<T> = DevicePointer::null();
             let mut size: usize = 0;
 
-            cuda::cuModuleGetGlobal_v2(
-                &mut ptr as *mut DevicePointer<T> as *mut cuda::CUdeviceptr,
+            cuModuleGetGlobal_v2(
+                &mut ptr as *mut DevicePointer<T> as *mut CUdeviceptr,
                 &mut size as *mut usize,
                 self.inner,
                 name.as_ptr(),
@@ -153,14 +152,10 @@ impl Module {
     /// ```
     pub fn get_function<'a>(&'a self, name: &CStr) -> CudaResult<Function<'a>> {
         unsafe {
-            let mut func: cuda::CUfunction = ptr::null_mut();
+            let mut func: CUfunction = ptr::null_mut();
 
-            cuda::cuModuleGetFunction(
-                &mut func as *mut cuda::CUfunction,
-                self.inner,
-                name.as_ptr(),
-            )
-            .to_result()?;
+            cuModuleGetFunction(&mut func as *mut CUfunction, self.inner, name.as_ptr())
+                .to_result()?;
             Ok(Function::new(func, self))
         }
     }
@@ -199,7 +194,7 @@ impl Module {
 
         unsafe {
             let inner = mem::replace(&mut module.inner, ptr::null_mut());
-            match cuda::cuModuleUnload(inner).to_result() {
+            match cuModuleUnload(inner).to_result() {
                 Ok(()) => {
                     mem::forget(module);
                     Ok(())
@@ -218,7 +213,7 @@ impl Drop for Module {
         unsafe {
             // No choice but to panic if this fails...
             let module = mem::replace(&mut self.inner, ptr::null_mut());
-            cuda::cuModuleUnload(module)
+            cuModuleUnload(module)
                 .to_result()
                 .expect("Failed to unload CUDA module");
         }
@@ -245,7 +240,7 @@ impl<'a, T> CopyDestination<T> for Symbol<'a, T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyHtoD_v2(
+                cuMemcpyHtoD_v2(
                     self.ptr.as_raw_mut() as u64,
                     val as *const T as *const c_void,
                     size,
@@ -260,7 +255,7 @@ impl<'a, T> CopyDestination<T> for Symbol<'a, T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoH_v2(
+                cuMemcpyDtoH_v2(
                     val as *const T as *mut c_void,
                     self.ptr.as_raw() as u64,
                     size,

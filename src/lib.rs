@@ -152,7 +152,8 @@
 
 #[macro_use]
 extern crate bitflags;
-extern crate cuda_sys;
+extern crate cuda_driver_sys;
+extern crate cuda_runtime_sys;
 extern crate rustacuda_core;
 
 pub mod context;
@@ -170,7 +171,7 @@ mod derive_compile_fail;
 use crate::context::{Context, ContextFlags};
 use crate::device::Device;
 use crate::error::{CudaResult, ToResult};
-use cuda_sys::cuda::{cuDriverGetVersion, cuInit};
+use cuda_driver_sys::{cuDriverGetVersion, cuInit};
 
 bitflags! {
     /// Bit flags for initializing the CUDA driver. Currently, no flags are defined,

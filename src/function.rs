@@ -3,7 +3,7 @@
 use crate::context::{CacheConfig, SharedMemoryConfig};
 use crate::error::{CudaResult, ToResult};
 use crate::module::Module;
-use cuda_sys::cuda::{self, CUfunction};
+use cuda_driver_sys::*;
 use std::marker::PhantomData;
 use std::mem::transmute;
 
@@ -202,7 +202,7 @@ impl<'a> Function<'a> {
     pub fn get_attribute(&self, attr: FunctionAttribute) -> CudaResult<i32> {
         unsafe {
             let mut val = 0i32;
-            cuda::cuFuncGetAttribute(
+            cuFuncGetAttribute(
                 &mut val as *mut i32,
                 // This should be safe, as the repr and values of FunctionAttribute should match.
                 ::std::mem::transmute(attr),
@@ -243,7 +243,7 @@ impl<'a> Function<'a> {
     /// # }
     /// ```
     pub fn set_cache_config(&mut self, config: CacheConfig) -> CudaResult<()> {
-        unsafe { cuda::cuFuncSetCacheConfig(self.inner, transmute(config)).to_result() }
+        unsafe { cuFuncSetCacheConfig(self.inner, transmute(config)).to_result() }
     }
 
     /// Sets the preferred shared memory configuration for this function.
@@ -271,7 +271,7 @@ impl<'a> Function<'a> {
     /// # }
     /// ```
     pub fn set_shared_memory_config(&mut self, cfg: SharedMemoryConfig) -> CudaResult<()> {
-        unsafe { cuda::cuFuncSetSharedMemConfig(self.inner, transmute(cfg)).to_result() }
+        unsafe { cuFuncSetSharedMemConfig(self.inner, transmute(cfg)).to_result() }
     }
 
     pub(crate) fn to_inner(&self) -> CUfunction {

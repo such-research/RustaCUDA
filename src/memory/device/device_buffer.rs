@@ -3,7 +3,7 @@ use crate::memory::device::{AsyncCopyDestination, CopyDestination, DeviceSlice};
 use crate::memory::malloc::{cuda_free, cuda_malloc};
 use crate::memory::DevicePointer;
 use crate::stream::Stream;
-use cuda_sys::cuda;
+use cuda_driver_sys::cuMemsetD8_v2;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
@@ -76,7 +76,7 @@ impl<T> DeviceBuffer<T> {
         let ptr = if size > 0 && mem::size_of::<T>() > 0 {
             unsafe {
                 let mut ptr = cuda_malloc(size)?;
-                cuda::cuMemsetD8_v2(ptr.as_raw_mut() as u64, 0, size * mem::size_of::<T>())
+                cuMemsetD8_v2(ptr.as_raw_mut() as u64, 0, size * mem::size_of::<T>())
                     .to_result()?;
                 ptr
             }

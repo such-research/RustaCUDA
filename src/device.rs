@@ -1,7 +1,7 @@
 //! Functions and types for enumerating CUDA devices and retrieving information about them.
 
 use crate::error::{CudaResult, ToResult};
-use cuda_sys::cuda::*;
+use cuda_driver_sys::*;
 use std::ffi::CStr;
 use std::ops::Range;
 
@@ -192,8 +192,54 @@ pub enum DeviceAttribute {
     ComputePreemptionSupported = 90,
     /// Device can access host registered memory at the same virtual address as the CPU
     CanUseHostPointerForRegisteredMem = 91,
-    #[doc(hidden)]
-    __NonExhaustive = 92,
+    /// `cuStreamBatchMemOp` and related APIs are supported.
+    CanUseStreamMemOps = 92,
+    /// 64-bit operations are supported in ::cuStreamBatchMemOp and related APIs.
+    CanUse64BitStreamMemOps = 93,
+    /// CU_STREAM_WAIT_VALUE_NOR is supported.
+    CanUseStreamWaitValueNor = 94,
+    /// Device supports launching cooperative kernels via `cuLaunchCooperativeKernel`
+    CooperativeLaunch = 95,
+    /// Device can participate in cooperative kernels launched via `cuLaunchCooperativeKernelMultiDevice`
+    CooperativeMultiDeviceLaunch = 96,
+    /// Maximum optin shared memory per block
+    MaxSharedMemoryPerBlockOptin = 97,
+    /// Both the `CU_STREAM_WAIT_VALUE_FLUSH` flag and the `CU_STREAM_MEM_OP_FLUSH_REMOTE_WRITES` MemOp are supported on the device.
+    CanFlushRemoteWrites = 98,
+    /// Device supports using the `cuMemHostRegister` flag `CU_MEMHOSTREGISTER_READ_ONLY` to register memory that must be mapped as read-only to the GPU
+    HostRegisterSupported = 99,
+    /// Device accesses pageable memory via the host's page tables.
+    PageableMemoryAccessUsesHostPageTables = 100,
+    /// The host can directly access managed memory on the device without migration.
+    DirectManagedMemAccessFromHost = 101,
+    /// Device supports virtual memory management APIs
+    VirtualMemoryManagementSupported = 102,
+    /// Device supports exporting memory to a posix file descriptor with `cuMemExportToShareableHandle`, if requested via `cuMemCreate`
+    HandleTypePosixFileDescriptorSupported = 103,
+    /// Device supports exporting memory to a Win32 NT handle with `cuMemExportToShareableHandle`, if requested via `cuMemCreate`
+    HandleTypeWin32HandleSupported = 104,
+    /// Device supports exporting memory to a Win32 KMT handle with `cuMemExportToShareableHandle`, if requested `cuMemCreate`
+    HandleTypeWin32KmtHandleSupported = 105,
+    /// Maximum number of blocks per multiprocessor
+    MaxBlocksPerMultiprocessor = 106,
+    ///Device supports compression of memory
+    GenericCompressionSupported = 107,
+    ///Device's maximum L2 persisting lines capacity setting in bytes
+    MaxPersistingL2CacheSize = 108,
+    /// The maximum value of `CUaccessPolicyWindow::num_bytes`.
+    MaxAccessPolicyWindowSize = 109,
+    ///Device supports specifying the GPUDirect RDMA flag with `cuMemCreate`
+    GpuDirectRdmaWithCudaVmnSupported = 110,
+    ///Shared memory reserved by CUDA driver per block in bytes
+    ReservedSharedMemoryPerBlock = 111,
+    ///Device supports sparse CUDA arrays and sparse CUDA mipmapped arrays
+    SparseCudaArraySupported = 112,
+    ///Device supports using the `cuMemHostRegister` flag `CU_MEMHOSTREGISTER_READ_ONLY` to register memory that must be mapped as read-only to the GPU
+    ReadOnlyHostRegisterSupported = 113,
+    ///External timeline semaphore interop is supported on the device
+    TimelineSemaphoreInteropSupported = 114,
+    ///Device supports using the ::cuMemAllocAsync and `cuMemPool` family of APIs
+    MemoryPoolsSupported = 115,
 }
 
 /// Opaque handle to a CUDA device.
@@ -427,8 +473,9 @@ mod test {
     #[test]
     fn test_enums_align() {
         assert_eq!(
-            DeviceAttribute::__NonExhaustive as u32,
-            CUdevice_attribute_enum::CU_DEVICE_ATTRIBUTE_MAX as u32
+            DeviceAttribute::HandleTypeWin32KmtHandleSupported as u32,
+            CUdevice_attribute_enum::CU_DEVICE_ATTRIBUTE_HANDLE_TYPE_WIN32_KMT_HANDLE_SUPPORTED
+                as u32
         );
     }
 }
