@@ -2,9 +2,7 @@
 
 use crate::context::{CacheConfig, SharedMemoryConfig};
 use crate::error::{CudaResult, ToResult};
-use crate::module::Module;
 use cuda_driver_sys::*;
-use std::marker::PhantomData;
 use std::mem::transmute;
 
 /// Dimensions of a grid, or the number of thread blocks in a kernel launch.
@@ -165,16 +163,14 @@ pub enum FunctionAttribute {
 
 /// Handle to a global kernel function.
 #[derive(Debug)]
-pub struct Function<'a> {
-    inner: CUfunction,
-    module: PhantomData<&'a Module>,
+pub struct Function {
+    inner: CUfunction
 }
 
-impl<'a> Function<'a> {
-    pub(crate) fn new(inner: CUfunction, _module: &Module) -> Function {
+impl Function {
+    pub(crate) fn new(inner: CUfunction) -> Function {
         Function {
-            inner,
-            module: PhantomData,
+            inner
         }
     }
 
@@ -417,9 +413,9 @@ macro_rules! launch {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use crate::memory::CopyDestination;
     use crate::memory::DeviceBuffer;
+    use crate::module::Module;
     use crate::quick_init;
     use crate::stream::{Stream, StreamFlags};
     use std::error::Error;

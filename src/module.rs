@@ -6,7 +6,6 @@ use crate::memory::{CopyDestination, DevicePointer};
 use cuda_driver_sys::*;
 use std::ffi::{c_void, CStr};
 use std::fmt;
-use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
 
@@ -111,7 +110,7 @@ impl Module {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_global<'a, T>(&'a self, name: &CStr) -> CudaResult<Symbol<'a, T>> {
+    pub fn get_global<T>(&self, name: &CStr) -> CudaResult<Symbol<T>> {
         unsafe {
             let mut ptr: DevicePointer<T> = DevicePointer::null();
             let mut size: usize = 0;
@@ -124,10 +123,7 @@ impl Module {
             )
             .to_result()?;
             assert_eq!(size, mem::size_of::<T>());
-            Ok(Symbol {
-                ptr,
-                module: PhantomData,
-            })
+            Ok(Symbol { ptr })
         }
     }
 
@@ -150,13 +146,13 @@ impl Module {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_function<'a>(&'a self, name: &CStr) -> CudaResult<Function<'a>> {
+    pub fn get_function(&self, name: &CStr) -> CudaResult<Function> {
         unsafe {
             let mut func: CUfunction = ptr::null_mut();
 
             cuModuleGetFunction(&mut func as *mut CUfunction, self.inner, name.as_ptr())
                 .to_result()?;
-            Ok(Function::new(func, self))
+            Ok(Function::new(func))
         }
     }
 
@@ -222,20 +218,19 @@ impl Drop for Module {
 
 /// Handle to a symbol defined within a CUDA module.
 #[derive(Debug)]
-pub struct Symbol<'a, T> {
+pub struct Symbol<T> {
     ptr: DevicePointer<T>,
-    module: PhantomData<&'a Module>,
 }
 
-impl<'a, T> crate::private::Sealed for Symbol<'a, T> {}
+impl<T> crate::private::Sealed for Symbol<T> {}
 
-impl<'a, T> fmt::Pointer for Symbol<'a, T> {
+impl<T> fmt::Pointer for Symbol<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
 
-impl<'a, T> CopyDestination<T> for Symbol<'a, T> {
+impl<T> CopyDestination<T> for Symbol<T> {
     fn copy_from(&mut self, val: &T) -> CudaResult<()> {
         let size = mem::size_of::<T>();
         if size != 0 {
