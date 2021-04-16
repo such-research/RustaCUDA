@@ -1,6 +1,6 @@
 use crate::error::{CudaResult, ToResult};
 use crate::memory::device::AsyncCopyDestination;
-use crate::memory::device::{CopyDestination, DeviceBuffer};
+use crate::memory::device::{AsyncSetDestination, CopyDestination, DeviceBuffer, SetDestination};
 use crate::memory::DevicePointer;
 use crate::stream::Stream;
 use cuda_driver_sys::*;
@@ -607,5 +607,41 @@ impl<T> AsyncCopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
 
     fn async_copy_to(&self, val: &mut DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
         self.async_copy_to(val as &mut DeviceSlice<T>, stream)
+    }
+}
+
+impl<T> SetDestination<T> for DeviceSlice<T> {
+    fn set_u32(&mut self, value: u32) -> CudaResult<()> {
+        assert!(
+            mem::size_of::<T>() % mem::size_of::<u32>() == 0,
+            "invalid value for destination"
+        );
+        let size_multiple = mem::size_of::<T>() / mem::size_of::<u32>();
+        unsafe { 
+            cuMemsetD32_v2(
+                self.as_mut_ptr() as u64, 
+                value, 
+                self.len() * size_multiple
+            ).to_result()
+        }
+    }
+}
+
+impl<T> AsyncSetDestination<T> for DeviceSlice<T> {
+    fn async_set_u32(&mut self, value: u32, stream: &Stream) -> CudaResult<()> {
+        assert!(
+            mem::size_of::<T>() % mem::size_of::<u32>() == 0,
+            "invalid value for destination"
+        );
+        let size_multiple = mem::size_of::<T>() / mem::size_of::<u32>();
+        unsafe {
+            cuMemsetD32Async(
+                self.as_mut_ptr() as u64,
+                value,
+                self.len() * size_multiple,
+                stream.as_inner(),
+            )
+            .to_result()
+        }
     }
 }

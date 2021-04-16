@@ -265,7 +265,7 @@ impl<T> Drop for DeviceBuffer<T> {
 #[cfg(test)]
 mod test_device_buffer {
     use super::*;
-    use crate::memory::device::DeviceBox;
+    use crate::memory::device::{AsyncSetDestination, DeviceBox, SetDestination};
     use crate::stream::{Stream, StreamFlags};
 
     #[derive(Clone, Debug)]
@@ -426,6 +426,28 @@ mod test_device_buffer {
         let mut buf = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4, 5], &stream).unwrap();
         let start = DeviceBuffer::from_slice_async(&[0u64, 1, 2, 3, 4], &stream).unwrap();
         let _ = buf.async_copy_from(&start, &stream);
+    }
+
+    #[test]
+    fn test_set_device_slice() {
+        let _context = crate::quick_init().unwrap();
+        let mut buf = DeviceBuffer::from_slice(&[2u32, 2, 2, 2]).unwrap();
+        let mut host_end = [0u32, 0, 0, 0];
+        buf[1..3].set_u32(5).unwrap();
+        buf[0..4].copy_to(&mut host_end).unwrap();
+        assert_eq!([2u32, 5, 5, 2], host_end);
+    }
+
+    #[test]
+    fn test_async_set_device_slice() {
+        let _context = crate::quick_init().unwrap();
+        let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
+        let mut buf = DeviceBuffer::from_slice(&[2u32, 2, 2, 2]).unwrap();
+        let mut host_end = [0u32, 0, 0, 0];
+        buf[1..3].async_set_u32(5, &stream).unwrap();
+        stream.synchronize().unwrap();
+        buf[0..4].copy_to(&mut host_end).unwrap();
+        assert_eq!([2u32, 5, 5, 2], host_end);
     }
 
     #[test]
