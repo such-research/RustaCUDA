@@ -1,0 +1,14 @@
+#!/bin/bash
+cd "$(dirname "$0")"
+
+# GTX 1080, GTX 1070, GTX 1060, GTX 1050, GTX 1030, Titan Xp, Tesla P40, Tesla P4 and newer GPUs
+TARGET_ARCH="sm_61"
+
+echo "Compiling PTX files for '$TARGET_ARCH' architecture..."
+
+nvcc \
+    -arch=$TARGET_ARCH \
+    -ptx \
+    --ptxas-options=v \
+    add.cu \
+    block_reduce.cu

@@ -1,9 +1,16 @@
 //! Functions and types for working with CUDA kernels.
 
+use std::mem::transmute;
+use cuda_driver_sys::{
+    CUfunction,
+    cuFuncGetAttribute,
+    cuFuncSetAttribute,
+    cuFuncSetCacheConfig,
+    cuFuncSetSharedMemConfig,
+    CUfunction_attribute::*,
+};
 use crate::context::{CacheConfig, SharedMemoryConfig};
 use crate::error::{CudaResult, ToResult};
-use cuda_driver_sys::*;
-use std::mem::transmute;
 
 /// Dimensions of a grid, or the number of thread blocks in a kernel launch.
 ///
@@ -131,34 +138,40 @@ impl<'a> From<&'a BlockSize> for BlockSize {
 pub enum FunctionAttribute {
     /// The maximum number of threads per block, beyond which a launch would fail. This depends on
     /// both the function and the device.
-    MaxThreadsPerBlock = 0,
+    MaxThreadsPerBlock = CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK as u32,
 
     /// The size in bytes of the statically-allocated shared memory required by this function.
-    SharedMemorySizeBytes = 1,
+    SharedMemorySizeBytes = CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES as u32,
 
     /// The size in bytes of the constant memory required by this function
-    ConstSizeBytes = 2,
+    ConstSizeBytes = CU_FUNC_ATTRIBUTE_CONST_SIZE_BYTES as u32,
 
     /// The size in bytes of local memory used by each thread of this function
-    LocalSizeBytes = 3,
+    LocalSizeBytes = CU_FUNC_ATTRIBUTE_LOCAL_SIZE_BYTES as u32,
 
     /// The number of registers used by each thread of this function
-    NumRegisters = 4,
+    NumRegisters = CU_FUNC_ATTRIBUTE_NUM_REGS as u32,
 
     /// The PTX virtual architecture version for which the function was compiled. This value is the
     /// major PTX version * 10 + the minor PTX version, so version 1.3 would return the value 13.
-    PtxVersion = 5,
+    PtxVersion = CU_FUNC_ATTRIBUTE_PTX_VERSION as u32,
 
     /// The binary architecture version for which the function was compiled. Encoded the same way as
     /// PtxVersion.
-    BinaryVersion = 6,
+    BinaryVersion = CU_FUNC_ATTRIBUTE_BINARY_VERSION as u32,
 
     /// The attribute to indicate whether the function has been compiled with user specified
     /// option "-Xptxas --dlcm=ca" set.
-    CacheModeCa = 7,
+    CacheModeCa = CU_FUNC_ATTRIBUTE_CACHE_MODE_CA as u32,
+
+    /// The maximum size in bytes of dynamically-allocated shared memory
+    MaxDynamicSharedMemorySizeBytes = CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES as u32,
+    
+    /// Preferred shared memory-L1 cache split ratio in percent of total shared memory
+    PreferredSharedMemoryCarveOut = CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT as u32,
 
     #[doc(hidden)]
-    __Nonexhaustive = 8,
+    __Nonexhaustive = CU_FUNC_ATTRIBUTE_MAX as u32
 }
 
 /// Handle to a global kernel function.
@@ -206,6 +219,39 @@ impl Function {
             )
             .to_result()?;
             Ok(val)
+        }
+    }
+
+    /// Sets the maximum dynamic shared memory in bytes for this function.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use rustacuda::*;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
+    /// # use rustacuda::module::Module;
+    /// # use std::ffi::CString;
+    /// # let ptx = CString::new(include_str!("../resources/block_reduce.ptx"))?;
+    /// # let module = Module::load_from_string(&ptx)?;
+    /// # let name = CString::new("sum")?;
+    /// use rustacuda::function::FunctionAttribute;
+    /// let mut function = module.get_function(&name)?;
+    /// let set_bytes = 1u32 << 16;
+    /// function.set_max_dynamic_shared_mem(set_bytes)?;
+    /// let get_bytes = function.get_attribute(FunctionAttribute::MaxDynamicSharedMemorySizeBytes)?;
+    /// assert_eq!(set_bytes, get_bytes as u32);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_max_dynamic_shared_mem(&mut self, bytes: u32) -> CudaResult<()> {
+        unsafe {
+            cuFuncSetAttribute(
+                self.inner,
+                CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES,
+                bytes as i32
+            ).to_result()
         }
     }
 
