@@ -135,6 +135,7 @@ impl<'a> From<&'a BlockSize> for BlockSize {
 /// All supported function attributes for [Function::get_attribute](struct.Function.html#method.get_attribute)
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum FunctionAttribute {
     /// The maximum number of threads per block, beyond which a launch would fail. This depends on
     /// both the function and the device.
@@ -171,7 +172,7 @@ pub enum FunctionAttribute {
     PreferredSharedMemoryCarveOut = CU_FUNC_ATTRIBUTE_PREFERRED_SHARED_MEMORY_CARVEOUT as u32,
 
     #[doc(hidden)]
-    __Nonexhaustive = CU_FUNC_ATTRIBUTE_MAX as u32
+    MaxAttribute = CU_FUNC_ATTRIBUTE_MAX as u32
 }
 
 /// Handle to a global kernel function.

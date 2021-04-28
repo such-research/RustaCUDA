@@ -1,8 +1,8 @@
 //! This crate provides a safe, user-friendly wrapper around the CUDA Driver API.
 //!
-//! # CUDA Terminology:
+//! # CUDA Terminology
 //!
-//! ## Devices and Hosts:
+//! ## Devices and Hosts
 //!
 //! This crate and its documentation uses the terms "device" and "host" frequently, so it's worth
 //! explaining them in more detail. A device refers to a CUDA-capable GPU or similar device and its
@@ -10,7 +10,7 @@
 //! must be transferred from host memory to device memory before the device can use it for
 //! computations, and the results must then be transferred back to host memory.
 //!
-//! ## Contexts, Modules, Streams and Functions:
+//! ## Contexts, Modules, Streams and Functions
 //!
 //! A CUDA context is akin to a process on the host - it contains all of the state for working with
 //! a device, all memory allocations, etc. Each context is associated with a single device.
@@ -24,7 +24,7 @@
 //! stream. Work within a single stream will execute sequentially in the order that it was
 //! submitted, and may interleave with work from other streams.
 //!
-//! ## Grids, Blocks and Threads:
+//! ## Grids, Blocks and Threads
 //!
 //! CUDA devices typically execute kernel functions on many threads in parallel. These threads can
 //! be grouped into thread blocks, which share an area of fast hardware memory known as shared
@@ -38,7 +38,7 @@
 //! hand, if the thread blocks are too small each processor will be under-utilized and the
 //! code will be unable to make effective use of shared memory.
 //!
-//! # Usage:
+//! # Usage
 //!
 //! Before using RustaCUDA, you must install the CUDA development libraries for your system. Version
 //! 8.0 or newer is required. You must also have a CUDA-capable GPU installed with the appropriate
@@ -49,7 +49,6 @@
 //! ```text
 //! [dependencies]
 //! rustacuda = "0.1"
-//! rustacuda_derive = "0.1"
 //! rustacuda_core = "0.1"
 //! ```
 //!
@@ -58,23 +57,26 @@
 //! ```text
 //! #[macro_use]
 //! extern crate rustacuda;
-//!
-//! #[macro_use]
-//! extern crate rustacuda_derive;
-//!
 //! extern crate rustacuda_core;
 //! ```
 //!
-//! Finally, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA libraries.
-//! For example, on Windows (MINGW):
+//! Finally, set the CUDA library path environment variable to the location of your CUDA libraries.
+//! 
+//! #### Ubuntu
 //!
-//! ```text
-//! export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64"
+//! ```shell
+//! export LIBRARY_PATH=/usr/local/cuda/lib64
+//! ```
+//!
+//! #### Windows
+//!
+//! ```shell
+//! export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\lib\x64"
 //! ```
 //!
 //! # Examples
 //!
-//! ## Adding two numbers on the device:
+//! ## Adding two numbers on the device
 //!
 //! First, download the `resources/add.ptx` file from the RustaCUDA repository and place it in
 //! the resources directory for your application.
@@ -165,8 +167,6 @@ pub mod memory;
 pub mod module;
 pub mod prelude;
 pub mod stream;
-
-mod derive_compile_fail;
 
 use crate::context::{Context, ContextFlags};
 use crate::device::Device;

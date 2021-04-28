@@ -1,2 +1,2 @@
 mod pointer;
-pub use self::pointer::*;
+pub use pointer::*;

@@ -1,18 +1,17 @@
 [package]
 name = "rustacuda"
 version = "0.1.3"
-authors = ["Brook Heisler <brookheisler@gmail.com>"]
+authors = ["Joonas Satka <joonas.satka@gmail.com>"]
 edition = "2018"
 
 description = "CUDA Driver API Wrapper"
-repository = "https://github.com/bheisler/RustaCUDA"
+repository = "https://github.com/such-research/RustaCUDA"
 readme = "README.md"
 license = "Apache-2.0 OR MIT"
 keywords = ["bindings", "cuda", "gpgpu"]
 categories = ["api-bindings", "concurrency"]
 
 [badges]
-travis-ci = { repository = "bheisler/RustaCUDA" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
@@ -20,4 +19,4 @@ bitflags = "1.2"
 cuda-driver-sys = "0.3.0"
 cuda-runtime-sys = "0.3.0-alpha.1"
 num = "0.4.0"
-rustacuda_core = { version = "0.1.2", path = "rustacuda_core" }
+rustacuda_core = { version = "0.1.3", path = "rustacuda_core" }

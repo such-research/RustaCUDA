@@ -3,18 +3,13 @@
 <div align="center">High-level Interface to <a href="https://developer.nvidia.com/cuda-zone">NVIDIA® CUDA™ Driver API</a> in Rust</div>
 
 <div align="center">
-    <a href="https://bheisler.github.io/RustaCUDA/rustacuda/index.html">API Documentation (master branch)</a>
+    <a href="https://such-research.github.io/RustaCUDA/rustacuda/index.html">API Documentation (master branch)</a>
 </div>
+<br/>
 
-<div align="center">
-	<a href="https://travis-ci.org/bheisler/RustaCUDA">
-        <img src="https://travis-ci.org/bheisler/RustaCUDA.svg?branch=master" alt="Travis-CI">
-    </a>
-</div>
+This is a fork of [RustaCUDA](https://github.com/bheisler/RustaCUDA) crate by Brook Heisler (@bheisler). Some compromises are, and will be made in favor of flexibility and performance over safety in this particular fork.
 
-RustaCUDA helps you bring GPU-acceleration to your projects by providing a flexible, easy-to-use
-interface to the CUDA GPU computing toolkit. RustaCUDA makes it easy to manage GPU memory,
-transfer data to and from the GPU, and load and launch compute kernels written in any language.
+RustaCUDA helps you bring GPU-acceleration to your projects by providing a flexible, easy-to-use interface to the CUDA GPU computing toolkit. RustaCUDA makes it easy to manage GPU memory, transfer data to and from the GPU, and load and launch compute kernels written in any language.
 
 ## Table of Contents
 - [Table of Contents](#table-of-contents)
@@ -33,8 +28,8 @@ transfer data to and from the GPU, and load and launch compute kernels written i
 
  - __High-Level__: Using RustaCUDA should feel familiar and intuitive for Rust programmers.
  - __Easy-to-Use__: RustaCUDA should be well-documented and well-designed enough to help novice GPU programmers get started, while not limiting more experienced folks too much.
- - __Safe__: Many aspects of GPU-accelerated computing are difficult to reconcile with Rust's safety guarantees, but RustaCUDA should provide the safest interface that is reasonably practical.
- - __Fast__: RustaCUDA should aim to be as fast as possible, where it doesn't conflict with the other goals.
+ - __Fast__: RustaCUDA should aim to be as fast as possible, where it doesn't conflict with the above goals.
+ - __Safe__: Many aspects of GPU-accelerated computing are difficult to reconcile with Rust's safety guarantees, but RustaCUDA should provide as safe interface that is reasonably practical without compromising too much on performance.
 
 RustaCUDA is intended to provide a programmer-friendly library for working with the host-side CUDA
 Driver API. It is not intended to assist in compiling Rust code to CUDA kernels (though see
@@ -65,22 +60,19 @@ Before using RustaCUDA, you must install the CUDA development libraries for your
 8.0 or newer is required. You must also have a CUDA-capable GPU installed with the appropriate
 drivers.
 
-First, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA headers:
+#### Ubuntu
 
-```text
-export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64"
+```shell
+export LIBRARY_PATH=/usr/local/cuda/lib64
 ```
 
-Some Ubuntu users have encountered linker errors when using CUDA_LIBRARY_PATH. If you see an error
-like this:
+#### Windows
 
-```text
-  = note: /usr/bin/ld: cannot find -lcudart                                                              
-          /usr/bin/ld: cannot find -lcublas                                                              
-          collect2: error: ld returned 1 exit status 
+```shell
+export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.3\lib\x64"
 ```
 
-Using `LIBRARY_PATH` instead of `CUDA_LIBRARY_PATH` seems to help.
+#### Using in a crate
 
 Now, to start building a basic CUDA crate. Add the following to your `Cargo.toml`:
 
@@ -88,7 +80,6 @@ Now, to start building a basic CUDA crate. Add the following to your `Cargo.toml
 [dependencies]
 rustacuda = "0.1"
 rustacuda_core = "0.1"
-rustacuda_derive = "0.1"
 ```
 
 And this to your crate root:
@@ -98,7 +89,6 @@ And this to your crate root:
 extern crate rustacuda;
 
 #[macro_use]
-extern crate rustacuda_derive;
 extern crate rustacuda_core;
 ```
 
@@ -183,11 +173,11 @@ confusing or incorrect in the documentation.
 Code or documentation improvements in the form of pull requests are also welcome. Please file or
 comment on an issue to allow for discussion before doing a lot of work, though.
 
-For more details, see the [CONTRIBUTING.md file](https://github.com/bheisler/rustaCUDA/blob/master/CONTRIBUTING.md).
+For more details, see the [CONTRIBUTING.md file](https://github.com/such-research/rustaCUDA/blob/master/CONTRIBUTING.md).
 
 ### Maintenance
 
-RustaCUDA is currently maintained by Brook Heisler (@bheisler).
+RustaCUDA is currently maintained by Joonas Satka (@joonassatka).
 
 ### License
 

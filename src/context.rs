@@ -133,6 +133,7 @@ use std::ptr;
 /// and set the cache config for the current context.
 #[repr(u32)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum CacheConfig {
     /// No preference for shared memory or L1 (default)
     PreferNone = 0,
@@ -142,9 +143,6 @@ pub enum CacheConfig {
     PreferL1 = 2,
     /// Prefer equal-sized L1 cache and shared memory
     PreferEqual = 3,
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 /// This enumeration represents the limited resources which can be accessed through
@@ -152,6 +150,7 @@ pub enum CacheConfig {
 /// [CurrentContext::set_resource_limit](struct.CurrentContext.html#method.set_resource_limit).
 #[repr(u32)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum ResourceLimit {
     /// The size in bytes of each GPU thread stack
     StackSize = 0,
@@ -170,9 +169,6 @@ pub enum ResourceLimit {
     DeviceRuntimePendingLaunchCount = 4,
     /// L2 cache fetch granularity
     MaxL2FetchGranularity = 5,
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 /// This enumeration represents the options for configuring the shared memory bank size.
@@ -183,6 +179,7 @@ pub enum ResourceLimit {
 /// and set the cache config for the current context.
 #[repr(u32)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum SharedMemoryConfig {
     /// Set shared-memory bank size to the default.
     DefaultBankSize = 0,
@@ -190,9 +187,6 @@ pub enum SharedMemoryConfig {
     FourByteBankSize = 1,
     /// Set shared-memory bank width to eight bytes
     EightByteBankSize = 2,
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 bitflags! {

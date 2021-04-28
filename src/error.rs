@@ -19,6 +19,7 @@ use std::result::Result;
 /// Error enum which represents all the potential errors returned by the CUDA driver API.
 #[repr(u32)]
 #[allow(missing_docs)]
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CudaError {
     // CUDA errors
@@ -83,18 +84,13 @@ pub enum CudaError {
 
     // RustaCUDA errors
     InvalidMemoryAllocation = 100_100,
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 impl fmt::Display for CudaError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             CudaError::InvalidMemoryAllocation => write!(f, "Invalid memory allocation"),
-            CudaError::__Nonexhaustive => write!(f, "__Nonexhaustive"),
-            other if (other as u32) <= 999 => {
-                let value = other as u32;
+            value if (value as u32) <= 999 => {
                 let mut ptr: *const c_char = ptr::null();
                 unsafe {
                     cuGetErrorString(mem::transmute(value), &mut ptr as *mut *const c_char)
@@ -119,12 +115,12 @@ pub type CudaResult<T> = Result<T, CudaError>;
 pub type DropResult<T> = Result<(), (CudaError, T)>;
 
 pub(crate) trait ToResult {
-    fn to_result(self) -> CudaResult<()>;
+    fn to_result(&self) -> CudaResult<()>;
 }
 
 impl ToResult for CUresult {
-    fn to_result(self) -> CudaResult<()> {
-        match self {
+    fn to_result(&self) -> CudaResult<()> {
+        match *self {
             CUresult::CUDA_SUCCESS => Ok(()),
             CUresult::CUDA_ERROR_INVALID_VALUE => Err(CudaError::InvalidValue),
             CUresult::CUDA_ERROR_OUT_OF_MEMORY => Err(CudaError::OutOfMemory),
