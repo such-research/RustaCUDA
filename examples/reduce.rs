@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // This kernel adds values in each block segment defined by the block size.
     unsafe {
         // Launch the kernel with defined block sizes
-        let function_name = CString::new("sum")?;
+        let function_name = CString::new("block_sum")?;
         let mut kernel = module.get_function(&function_name)?;
         let block = BLOCK as u32;
         let grid = (N as u32).div_ceil(&block);

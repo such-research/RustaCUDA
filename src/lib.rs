@@ -5,38 +5,50 @@
 //! ## Devices and Hosts
 //!
 //! This crate and its documentation uses the terms "device" and "host" frequently, so it's worth
-//! explaining them in more detail. A device refers to a CUDA-capable GPU or similar device and its
-//! associated external memory space. The host is the CPU and its associated memory space. Data
-//! must be transferred from host memory to device memory before the device can use it for
-//! computations, and the results must then be transferred back to host memory.
+//! explaining them in more detail.
+//!
+//! **Device** refers to a CUDA-capable GPU or similar device and its associated external memory space.
+//!
+//! **Host** is the CPU and its associated memory space. Data must be transferred from host memory
+//! to device memory before the device can use the data for computations, and the results must then
+//! be transferred back to host memory in order to use the results on the CPU, such as in your Rust
+//! code.
 //!
 //! ## Contexts, Modules, Streams and Functions
 //!
-//! A CUDA context is akin to a process on the host - it contains all of the state for working with
-//! a device, all memory allocations, etc. Each context is associated with a single device.
+//! **Context** is akin to a process on the host — it contains all of the state for working
+//! with a device, all memory allocations, etc. Each context is associated with a single device.
 //!
-//! A Module is similar to a shared-object library - it is a piece of compiled code which exports
+//! **Module** is similar to a shared-object library — it is a piece of compiled code which exports
 //! functions and global values. Functions can be loaded from modules and launched on a device as
 //! one might load a function from a shared-object file and call it. Functions are also known as
-//! kernels and the two terms will be used interchangeably.
+//! kernels, both of which are short terms for global kernel function, and these terms will be used
+//! interchangeably.
 //!
-//! A Stream is akin to a thread - asynchronous work such as kernel execution can be queued into a
+//! **Stream** is akin to a thread — asynchronous work such as kernel execution can be queued into a
 //! stream. Work within a single stream will execute sequentially in the order that it was
 //! submitted, and may interleave with work from other streams.
 //!
-//! ## Grids, Blocks and Threads
+//! ## Grids, Blocks, Threads and Shared Memory
 //!
-//! CUDA devices typically execute kernel functions on many threads in parallel. These threads can
-//! be grouped into thread blocks, which share an area of fast hardware memory known as shared
-//! memory. Thread blocks can be one-, two-, or three-dimensional, which is helpful when working
-//! with multi-dimensional data such as images. Thread blocks are then grouped into grids, which
-//! can also be one-, two-, or three-dimensional.
+//! CUDA devices contain multiple separate processors, known as multiprocessors or MPs. Each
+//! multiprocessor is capable of executing large number of **threads** simultaneously, grouped
+//! into thread blocks, or **blocks** in short. Each thread block executes on a single
+//! multiprocessor and shares an area of fast on-chip memory known as **shared memory**.
+//! Accesses to shared memory on the physical multiprocessor are typically more than 10 times
+//! faster than accesses to device global memory, which is accessible across all thread blocks.
+//! Thread blocks can be one-, two-, or three-dimensional, which is helpful when working with
+//! multi-dimensional data such as images.
 //!
-//! CUDA devices often contain multiple separate processors. Each processor is capable of excuting
-//! many threads simultaneously, but they must be from the same thread block. Thus, it is important
-//! to ensure that the grid size is large enough to provide work for all processors. On the other
-//! hand, if the thread blocks are too small each processor will be under-utilized and the
-//! code will be unable to make effective use of shared memory.
+//! Thread blocks are launched in **grids**, which also can be one-, two-, or three-dimensional.
+//! The total number of threads launched by a kernel launch will be the product of grid size
+//! multiplied by thread block size.
+//!
+//! For achieving high computation throughput, it is important to ensure that the grid size
+//! is large enough, so that optimal number of multiprocessors are utilized to complete the
+//! work. On the other hand, if the number of threads in each thread block gets too small,
+//! each multiprocessor may be under-utilized, or kernels using shared memory may not be
+//! able to make effective use of the fast shared memory.
 //!
 //! # Usage
 //!
@@ -94,7 +106,7 @@
 //! fn main() -> Result<(), Box<dyn Error>> {
 //!     // Initialize the CUDA API
 //!     rustacuda::init(CudaFlags::empty())?;
-//!     
+//!
 //!     // Get the first device
 //!     let device = Device::get_device(0)?;
 //!
@@ -102,7 +114,7 @@
 //!     let context = Context::create_and_push(
 //!         ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
 //!
-//!     // Load the module containing the function we want to call
+//!     // Load the module containing the global kernel function we want to call
 //!     let module_data = CString::new(include_str!("../resources/add.ptx"))?;
 //!     let module = Module::load_from_string(&module_data)?;
 //!
@@ -114,27 +126,32 @@
 //!     let mut y = DeviceBox::new(&20.0f32)?;
 //!     let mut result = DeviceBox::new(&0.0f32)?;
 //!
-//!     // Launching kernels is unsafe since Rust can't enforce safety - think of kernel launches
-//!     // as a foreign-function call. In this case, it is - this kernel is written in CUDA C.
+//!     // Launching kernels is unsafe since Rust can't enforce safety.
+//!     // Think of kernel launches as a foreign-function call. In this case,
+//!     // it is — this kernel is written in CUDA C, compiled to PTX, and then
+//!     // loaded and executed on the CUDA device.
 //!     unsafe {
-//!         // Launch the `sum` function with one block containing one thread on the given stream.
-//!         launch!(module.sum<<<1, 1, 0, stream>>>(
+//!         // Launch the `add` global kernel function with one block containing one thread
+//!         // without shared memory on the given stream.
+//!         launch!(module.add<<<1, 1, 0, stream>>>(
 //!             x.as_device_ptr(),
 //!             y.as_device_ptr(),
 //!             result.as_device_ptr(),
-//!             1 // Length
+//!             1u32 // Number of values in device buffers
 //!         ))?;
 //!     }
 //!
-//!     // The kernel launch is asynchronous, so we wait for the kernel to finish executing
+//!     // Kernel launches are always asynchronous, so wait for the stream
+//!     // to complete queued kernel launches, as well as any other tasks
+//!     // submitted to the stream.
 //!     stream.synchronize()?;
 //!
 //!     // Copy the result back to the host
 //!     let mut result_host = 0.0f32;
 //!     result.copy_to(&mut result_host)?;
-//!     
+//!
 //!     println!("Sum is {}", result_host);
-//! #   assert_eq!(30, result_host as u32);
+//!     assert_eq!(30.0f32, result_host);
 //!
 //!     Ok(())
 //! }
@@ -222,13 +239,13 @@ impl CudaApiVersion {
         }
     }
 
-    /// Return the major version number - eg. the 9 in version 9.2
+    /// Return the major version number — eg. the 9 in version 9.2
     #[inline]
     pub fn major(self) -> i32 {
         self.version / 1000
     }
 
-    /// Return the minor version number - eg. the 2 in version 9.2
+    /// Return the minor version number — eg. the 2 in version 9.2
     #[inline]
     pub fn minor(self) -> i32 {
         (self.version % 1000) / 10

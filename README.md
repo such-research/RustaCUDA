@@ -37,14 +37,15 @@ Driver API. It is not intended to assist in compiling Rust code to CUDA kernels 
 utilities to be used within the kernels themselves.
 
 RustaCUDA is deliberately agnostic about how the kernels work or how they were compiled. This makes
-it possible to (for example) use C kernels compiled with `nvcc`.
+it possible to use kernels compiled with `nvcc`. The `resources/` directory contains an example
+script for compiling the example kernels written in CUDA C with `nvcc` for specified CUDA device
+architecture target.
 
 ### Roadmap
 
 RustaCUDA currently supports a minimum viable subset of the CUDA API (essentially, the minimum
 necessary to manage memory and launch basic kernels). This does not include:
 
-- Any asynchronous operation aside from kernel launches
 - Access to CUDA 1/2/3D arrays and texture memory
 - Multi-GPU support
 - Runtime linking
@@ -95,8 +96,8 @@ extern crate rustacuda_core;
 Next, download the `resources/add.ptx` file from the RustaCUDA repository and place it in
 the resources directory for your application.
 
-The *examples/* directory contains sample code that helps getting started. 
-To execute the most simple example, (adding two numbers on GPU),
+The `examples/` directory contains sample code that helps getting started. 
+To execute the most simple example, (adding two numbers on the CUDA device),
 place this code to your `main.rs` file.
 
 ```rust
@@ -126,24 +127,32 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Create a stream to submit work to
     let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
 
+    // Number of values in device buffers
+    const N: u32 = 1;
+
     // Allocate space on the device and copy numbers to it.
     let mut x = DeviceBox::new(&10.0f32)?;
     let mut y = DeviceBox::new(&20.0f32)?;
     let mut result = DeviceBox::new(&0.0f32)?;
 
-    // Launching kernels is unsafe since Rust can't enforce safety - think of kernel launches
-    // as a foreign-function call. In this case, it is - this kernel is written in CUDA C.
+    // Launching kernels is unsafe since Rust can't enforce safety.
+    // Think of kernel launches as a foreign-function call. In this case,
+    // it is - this kernel is written in CUDA C, compiled to PTX, and then
+    // loaded and executed on the CUDA device.
     unsafe {
-        // Launch the `sum` function with one block containing one thread on the given stream.
-        launch!(module.sum<<<1, 1, 0, stream>>>(
+        // Launch the `add` global kernel function with one block containing one thread
+        // without shared memory on the given stream.
+        launch!(module.add<<<1, 1, 0, stream>>>(
             x.as_device_ptr(),
             y.as_device_ptr(),
             result.as_device_ptr(),
-            1 // Length
+            N
         ))?;
     }
 
-    // The kernel launch is asynchronous, so we wait for the kernel to finish executing
+    // Kernel launches are always asynchronous, so wait for the stream
+    // to complete queued kernel launches, as well as any other tasks
+    // submitted to the stream.
     stream.synchronize()?;
 
     // Copy the result back to the host

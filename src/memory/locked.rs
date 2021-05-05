@@ -336,8 +336,6 @@ mod test {
     #[test]
     fn test_allocate_correct_size() {
         let _context = crate::quick_init().unwrap();
-
-        // Placeholder - read out available system memory here
         let allocation_size = 1;
 
         // Test if allocation fails with an out-of-memory error

@@ -2,7 +2,7 @@
 //! crates.
 //!
 //! It includes a small number of types needed when sharing types between the host and device.
-//! This is not intended to be used in a standalone way - see RustaCUDA for full documentation.
+//! This is not intended to be used in a standalone way — see RustaCUDA for full documentation.
 
 #![no_std]
 #![warn(

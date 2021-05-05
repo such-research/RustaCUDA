@@ -176,6 +176,9 @@ pub enum FunctionAttribute {
 }
 
 /// Handle to a global kernel function.
+///
+/// See [Module::get_function](module.Module.html#method.get_function) for getting a handle to global kernel function
+/// and [launch](../macro.launch.html) macro for launching global kernel functions.
 #[derive(Debug)]
 pub struct Function {
     inner: CUfunction
@@ -201,7 +204,7 @@ impl Function {
     /// # use std::ffi::CString;
     /// # let ptx = CString::new(include_str!("../resources/add.ptx"))?;
     /// # let module = Module::load_from_string(&ptx)?;
-    /// # let name = CString::new("sum")?;
+    /// # let name = CString::new("add")?;
     /// use rustacuda::function::FunctionAttribute;
     /// let function = module.get_function(&name)?;
     /// let shared_memory = function.get_attribute(FunctionAttribute::SharedMemorySizeBytes)?;
@@ -236,7 +239,7 @@ impl Function {
     /// # use std::ffi::CString;
     /// # let ptx = CString::new(include_str!("../resources/block_reduce.ptx"))?;
     /// # let module = Module::load_from_string(&ptx)?;
-    /// # let name = CString::new("sum")?;
+    /// # let name = CString::new("block_sum")?;
     /// use rustacuda::function::FunctionAttribute;
     /// let mut function = module.get_function(&name)?;
     /// let set_bytes = 1u32 << 16;
@@ -276,9 +279,9 @@ impl Function {
     /// # let _ctx = quick_init()?;
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
-    /// # let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// # let ptx = CString::new(include_str!("../resources/block_reduce.ptx"))?;
     /// # let module = Module::load_from_string(&ptx)?;
-    /// # let name = CString::new("sum")?;
+    /// # let name = CString::new("block_sum")?;
     /// use rustacuda::context::CacheConfig;
     /// let mut function = module.get_function(&name)?;
     /// function.set_cache_config(CacheConfig::PreferL1)?;
@@ -304,9 +307,9 @@ impl Function {
     /// # let _ctx = quick_init()?;
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
-    /// # let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// # let ptx = CString::new(include_str!("../resources/block_reduce.ptx"))?;
     /// # let module = Module::load_from_string(&ptx)?;
-    /// # let name = CString::new("sum")?;
+    /// # let name = CString::new("block_sum")?;
     /// use rustacuda::context::SharedMemoryConfig;
     /// let mut function = module.get_function(&name)?;
     /// function.set_shared_memory_config(SharedMemoryConfig::EightByteBankSize)?;
@@ -322,9 +325,9 @@ impl Function {
     }
 }
 
-/// Launch a kernel function asynchronously.
+/// Launch a global kernel function asynchronously.
 ///
-/// # Syntax:
+/// # Syntax
 ///
 /// The format of this macro is designed to resemble the triple-chevron syntax used to launch
 /// kernels in CUDA C. There are two forms available:
@@ -334,7 +337,7 @@ impl Function {
 /// ```
 ///
 /// This will load a kernel called `function_name` from the module `module` and launch it with
-/// the given grid/block size on the given stream. Unlike in CUDA C, the shared memory size and
+/// the given grid, block and shared memory sizes on the given stream. Unlike in CUDA C, the shared memory size and
 /// stream parameters are not optional. The shared memory size is a number of bytes per thread for
 /// dynamic shared memory (Note that this uses `extern __shared__ int x[]` in CUDA C, not the
 /// fixed-length arrays created by `__shared__ int x[64]`. This will usually be zero.).
@@ -383,48 +386,53 @@ impl Function {
 /// let module = Module::load_from_string(&ptx)?;
 /// let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
 ///
-/// // Create buffers for data
-/// let mut in_x = DeviceBuffer::from_slice(&[1.0f32; 10])?;
-/// let mut in_y = DeviceBuffer::from_slice(&[2.0f32; 10])?;
-/// let mut out_1 = DeviceBuffer::from_slice(&[0.0f32; 10])?;
-/// let mut out_2 = DeviceBuffer::from_slice(&[0.0f32; 10])?;
+/// /// Number of values in device buffers
+/// const N: usize = 10;
 ///
-/// // This kernel adds each element in `in_x` and `in_y` and writes the result into `out`.
+/// // Create buffers for data
+/// let mut in_x = DeviceBuffer::from_slice(&[1.0f32; N])?;
+/// let mut in_y = DeviceBuffer::from_slice(&[2.0f32; N])?;
+/// let mut out_1 = DeviceBuffer::from_slice(&[0.0f32; N])?;
+/// let mut out_2 = DeviceBuffer::from_slice(&[0.0f32; N])?;
+///
+/// // This kernel adds each element in `in_x` and `in_y` and writes the result
+/// // into `out` at corresponding index.
 /// unsafe {
-///     // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
-///     let result = launch!(module.sum<<<1, 1, 0, stream>>>(
+///     // Launch the kernel with one block of one thread, without shared memory on `stream`.
+///     let result = launch!(module.add<<<1, 1, 0, stream>>>(
 ///         in_x.as_device_ptr(),
 ///         in_y.as_device_ptr(),
 ///         out_1.as_device_ptr(),
-///         out_1.len()
+///         1u32
 ///     ));
-///     // `launch!` returns an error in case anything went wrong with the launch itself, but
-///     // kernel launches are asynchronous so errors caused by the kernel (eg. invalid memory
-///     // access) will show up later at some other CUDA API call (probably at `synchronize()`
-///     // below).
+///     // `launch!` returns an error in case anything went wrong with the launch
+///     // itself, but as kernel launches are asynchronous the errors caused
+///     // by the kernel (eg. invalid memory access) will show up at next
+///     // `Stream::synchronize()` or one of the subsequent CUDA API calls.
 ///     result?;
 ///
 ///     // Launch the kernel again using the `function` form:
-///     let function_name = CString::new("sum")?;
+///     let function_name = CString::new("add")?;
 ///     let sum = module.get_function(&function_name)?;
-///     // Launch with 1x1x1 (1) blocks of 10x1x1 (10) threads, to show that you can use tuples to
-///     // configure grid and block size.
+///     // Launch with 1x1x1 (1) blocks of 10x1x1 (10) threads, to show
+///     // that you can use tuples to configure grid and block size.
 ///     let result = launch!(sum<<<(1, 1, 1), (10, 1, 1), 0, stream>>>(
 ///         in_x.as_device_ptr(),
 ///         in_y.as_device_ptr(),
 ///         out_2.as_device_ptr(),
-///         out_2.len()
+///         N as u32
 ///     ));
 ///     result?;
 /// }
 ///
-/// // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
+/// // Kernel launches are always asynchronous, so wait for the stream
+/// // to complete queued kernel launches, as well as other queued work.
 /// stream.synchronize()?;
 ///
 /// // Copy the results back to host memory
-/// let mut out_host = [0.0f32; 20];
-/// out_1.copy_to(&mut out_host[0..10])?;
-/// out_2.copy_to(&mut out_host[10..20])?;
+/// let mut out_host = [0.0f32; 11];
+/// out_1[0..1].copy_to(&mut out_host[0..1])?;
+/// out_2.copy_to(&mut out_host[1..11])?;
 ///
 /// for x in out_host.iter() {
 ///     assert_eq!(3.0, *x);
@@ -477,10 +485,10 @@ mod test {
         unsafe {
             let mut in_x = DeviceBuffer::from_slice(&[2.0f32; 128])?;
             let mut in_y = DeviceBuffer::from_slice(&[1.0f32; 128])?;
-            let mut out: DeviceBuffer<f32> = DeviceBuffer::uninitialized(128)?;
+            let mut out = DeviceBuffer::<f32>::uninitialized(128)?;
 
             let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
-            launch!(module.sum<<<1, 128, 0, stream>>>(in_x.as_device_ptr(), in_y.as_device_ptr(), out.as_device_ptr(), out.len()))?;
+            launch!(module.add<<<1, 128, 0, stream>>>(in_x.as_device_ptr(), in_y.as_device_ptr(), out.as_device_ptr(), out.len() as u32))?;
             stream.synchronize()?;
 
             let mut out_host = [0f32; 128];

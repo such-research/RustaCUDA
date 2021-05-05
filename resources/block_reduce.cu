@@ -1,5 +1,5 @@
-
-extern "C" __global__ void sum(
+/// Block size should be a power of 2
+extern "C" __global__ void block_sum(
     const float* x,
     float* out,
     unsigned int n

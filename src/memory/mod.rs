@@ -5,7 +5,7 @@
 //!
 //! # Device Memory
 //!
-//! Device memory is just what it sounds like - memory allocated on the device. Device memory
+//! Device memory is just what it sounds like — memory allocated on the device. Device memory
 //! cannot be accessed from the host directly, but data can be copied to and from the device.
 //! RustaCUDA exposes device memory through the [`DeviceBox`](struct.DeviceBox.html) and
 //! [`DeviceBuffer`](struct.DeviceBuffer.html) structures. Pointers to device memory are

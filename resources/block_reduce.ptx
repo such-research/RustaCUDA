@@ -10,13 +10,13 @@
 .target sm_61
 .address_size 64
 
-	// .globl	sum
+	// .globl	block_sum
 .extern .shared .align 4 .b8 smem[];
 
-.visible .entry sum(
-	.param .u64 sum_param_0,
-	.param .u64 sum_param_1,
-	.param .u32 sum_param_2
+.visible .entry block_sum(
+	.param .u64 block_sum_param_0,
+	.param .u64 block_sum_param_1,
+	.param .u32 block_sum_param_2
 )
 {
 	.reg .pred 	%p<20>;
@@ -25,9 +25,9 @@
 	.reg .b64 	%rd<9>;
 
 
-	ld.param.u64 	%rd1, [sum_param_0];
-	ld.param.u64 	%rd2, [sum_param_1];
-	ld.param.u32 	%r6, [sum_param_2];
+	ld.param.u64 	%rd1, [block_sum_param_0];
+	ld.param.u64 	%rd2, [block_sum_param_1];
+	ld.param.u32 	%r6, [block_sum_param_2];
 	mov.u32 	%r1, %ntid.x;
 	mov.u32 	%r2, %ctaid.x;
 	mov.u32 	%r3, %tid.x;

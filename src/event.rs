@@ -252,7 +252,7 @@ impl Event {
     ///
     /// // do some work ...
     /// # unsafe {
-    /// #    launch!(module.sum<<<1, 1, 0, stream>>>(
+    /// #    launch!(module.add<<<1, 1, 0, stream>>>(
     /// #            x.as_device_ptr(),
     /// #            y.as_device_ptr(),
     /// #            result.as_device_ptr(),

@@ -1,6 +1,6 @@
 //! # CUDA context management
 //!
-//! Most CUDA functions require a context. A CUDA context is analogous to a CPU process - it's
+//! Most CUDA functions require a context. A CUDA context is analogous to a CPU process — it's
 //! an isolated container for all runtime state, including configuration settings and the
 //! device/unified/page-locked memory allocations. Each context has a separate memory space, and
 //! pointers from one context do not work in another. Each context is associated with a single
@@ -124,7 +124,7 @@ use std::ptr;
 /// This enumeration represents configuration settings for devices which share hardware resources
 /// between L1 cache and shared memory.
 ///
-/// Note that this is only a preference - the driver will use the requested configuration if
+/// Note that this is only a preference. The driver will use the requested configuration if
 /// possible, but it is free to choose a different configuration if required to execute functions.
 ///
 /// See

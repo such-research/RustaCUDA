@@ -19,7 +19,7 @@ impl Module {
     /// Load a module from the given file name into the current context.
     ///
     /// The given file should be either a cubin file, a ptx file, or a fatbin file such as
-    /// those produced by `nvcc`.
+    /// those compiled by `nvcc`.
     ///
     /// # Example
     ///
@@ -52,7 +52,7 @@ impl Module {
     /// compiled executable.
     ///
     /// The given CStr must contain the bytes of a cubin file, a ptx file or a fatbin file such as
-    /// those produced by `nvcc`.
+    /// those compiled by `nvcc`.
     ///
     /// # Example
     ///
@@ -141,7 +141,7 @@ impl Module {
     ///
     /// let ptx = CString::new(include_str!("../resources/add.ptx"))?;
     /// let module = Module::load_from_string(&ptx)?;
-    /// let name = CString::new("sum")?;
+    /// let name = CString::new("add")?;
     /// let function = module.get_function(&name)?;
     /// # Ok(())
     /// # }
