@@ -76,12 +76,26 @@ pub trait AsyncCopyDestination<O: ?Sized>: crate::private::Sealed {
 /// Sealed trait implemented by types which represent allocated memory on the device,
 /// which can be initialized from a value.
 pub trait SetDestination<O: ?Sized>: crate::private::Sealed {
-    /// Initializes or sets device memory from `value`.
+    /// Initializes or sets device memory with sequence of 32-bit values.
     ///
     /// ### Errors
     ///
     /// If a CUDA error occurs, return the error.
     fn set_u32(&mut self, value: u32) -> CudaResult<()>;
+
+    /// Initializes or sets device memory with sequence of 16-bit values.
+    ///
+    /// ### Errors
+    ///
+    /// If a CUDA error occurs, return the error.
+    fn set_u16(&mut self, value: u16) -> CudaResult<()>;
+
+    /// Initializes or sets device memory with sequence of 8-bit values.
+    ///
+    /// ### Errors
+    ///
+    /// If a CUDA error occurs, return the error.
+    fn set_u8(&mut self, value: u8) -> CudaResult<()>;
 }
 
 /// Sealed trait implemented by types which represent allocated memory on the device,
@@ -93,7 +107,7 @@ pub trait SetDestination<O: ?Sized>: crate::private::Sealed {
 /// the set operation could still be pending or occurring on the device. This allows calling code
 /// to read, modify or deallocate the destination buffer resulting in a data race or undefined behavior.
 pub trait AsyncSetDestination<O: ?Sized>: crate::private::Sealed {
-    /// Initializes or sets device memory from `value`.
+    /// Initializes or sets device memory asynchronously with sequence of 32-bit values.
     ///
     /// # Safety
     ///
@@ -103,4 +117,26 @@ pub trait AsyncSetDestination<O: ?Sized>: crate::private::Sealed {
     ///
     /// If a CUDA error occurs, return the error.
     fn async_set_u32(&mut self, value: u32, stream: &Stream) -> CudaResult<()>;
+
+    /// Initializes or sets device memory asynchronously with sequence of 16-bit values.
+    ///
+    /// # Safety
+    ///
+    /// For why this function is unsafe, see [AsyncSetDestination](trait.AsyncSetDestination.html)
+    ///
+    /// # Errors
+    ///
+    /// If a CUDA error occurs, return the error.
+    fn async_set_u16(&mut self, value: u16, stream: &Stream) -> CudaResult<()>;
+
+    /// Initializes or sets device memory asynchronously with sequence of 16-bit values.
+    ///
+    /// # Safety
+    ///
+    /// For why this function is unsafe, see [AsyncSetDestination](trait.AsyncSetDestination.html)
+    ///
+    /// # Errors
+    ///
+    /// If a CUDA error occurs, return the error.
+    fn async_set_u8(&mut self, value: u8, stream: &Stream) -> CudaResult<()>;
 }

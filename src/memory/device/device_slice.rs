@@ -625,6 +625,36 @@ impl<T> SetDestination<T> for DeviceSlice<T> {
             ).to_result()
         }
     }
+
+    fn set_u16(&mut self, value: u16) -> CudaResult<()> {
+        assert!(
+            mem::size_of::<T>() % mem::size_of::<u16>() == 0,
+            "invalid value for destination"
+        );
+        let size_multiple = mem::size_of::<T>() / mem::size_of::<u16>();
+        unsafe { 
+            cuMemsetD16_v2(
+                self.as_mut_ptr() as u64, 
+                value, 
+                self.len() * size_multiple
+            ).to_result()
+        }
+    }
+
+    fn set_u8(&mut self, value: u8) -> CudaResult<()> {
+        assert!(
+            mem::size_of::<T>() % mem::size_of::<u8>() == 0,
+            "invalid value for destination"
+        );
+        let size_multiple = mem::size_of::<T>() / mem::size_of::<u8>();
+        unsafe { 
+            cuMemsetD8_v2(
+                self.as_mut_ptr() as u64, 
+                value, 
+                self.len() * size_multiple
+            ).to_result()
+        }
+    }
 }
 
 impl<T> AsyncSetDestination<T> for DeviceSlice<T> {
@@ -636,6 +666,40 @@ impl<T> AsyncSetDestination<T> for DeviceSlice<T> {
         let size_multiple = mem::size_of::<T>() / mem::size_of::<u32>();
         unsafe {
             cuMemsetD32Async(
+                self.as_mut_ptr() as u64,
+                value,
+                self.len() * size_multiple,
+                stream.as_inner(),
+            )
+            .to_result()
+        }
+    }
+
+    fn async_set_u16(&mut self, value: u16, stream: &Stream) -> CudaResult<()> {
+        assert!(
+            mem::size_of::<T>() % mem::size_of::<u16>() == 0,
+            "invalid value for destination"
+        );
+        let size_multiple = mem::size_of::<T>() / mem::size_of::<u16>();
+        unsafe {
+            cuMemsetD16Async(
+                self.as_mut_ptr() as u64,
+                value,
+                self.len() * size_multiple,
+                stream.as_inner(),
+            )
+            .to_result()
+        }
+    }
+
+    fn async_set_u8(&mut self, value: u8, stream: &Stream) -> CudaResult<()> {
+        assert!(
+            mem::size_of::<T>() % mem::size_of::<u8>() == 0,
+            "invalid value for destination"
+        );
+        let size_multiple = mem::size_of::<T>() / mem::size_of::<u8>();
+        unsafe {
+            cuMemsetD8Async(
                 self.as_mut_ptr() as u64,
                 value,
                 self.len() * size_multiple,

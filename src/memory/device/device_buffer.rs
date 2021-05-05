@@ -429,7 +429,7 @@ mod test_device_buffer {
     }
 
     #[test]
-    fn test_set_device_slice() {
+    fn test_set_u32_device_slice() {
         let _context = crate::quick_init().unwrap();
         let mut buf = DeviceBuffer::from_slice(&[2u32, 2, 2, 2]).unwrap();
         let mut host_end = [0u32, 0, 0, 0];
@@ -439,7 +439,27 @@ mod test_device_buffer {
     }
 
     #[test]
-    fn test_async_set_device_slice() {
+    fn test_set_u16_device_slice() {
+        let _context = crate::quick_init().unwrap();
+        let mut buf = DeviceBuffer::from_slice(&[2u16, 2, 2, 2]).unwrap();
+        let mut host_end = [0u16, 0, 0, 0];
+        buf[1..3].set_u16(5).unwrap();
+        buf[0..4].copy_to(&mut host_end).unwrap();
+        assert_eq!([2u16, 5, 5, 2], host_end);
+    }
+
+    #[test]
+    fn test_set_u8_device_slice() {
+        let _context = crate::quick_init().unwrap();
+        let mut buf = DeviceBuffer::from_slice(&[2u8, 2, 2, 2]).unwrap();
+        let mut host_end = [0u8, 0, 0, 0];
+        buf[1..3].set_u8(5).unwrap();
+        buf[0..4].copy_to(&mut host_end).unwrap();
+        assert_eq!([2u8, 5, 5, 2], host_end);
+    }
+
+    #[test]
+    fn test_async_set_u32_device_slice() {
         let _context = crate::quick_init().unwrap();
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
         let mut buf = DeviceBuffer::from_slice(&[2u32, 2, 2, 2]).unwrap();
@@ -448,6 +468,30 @@ mod test_device_buffer {
         stream.synchronize().unwrap();
         buf[0..4].copy_to(&mut host_end).unwrap();
         assert_eq!([2u32, 5, 5, 2], host_end);
+    }
+
+    #[test]
+    fn test_async_set_u16_device_slice() {
+        let _context = crate::quick_init().unwrap();
+        let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
+        let mut buf = DeviceBuffer::from_slice(&[2u16, 2, 2, 2]).unwrap();
+        let mut host_end = [0u16, 0, 0, 0];
+        buf[1..3].async_set_u16(5, &stream).unwrap();
+        stream.synchronize().unwrap();
+        buf[0..4].copy_to(&mut host_end).unwrap();
+        assert_eq!([2u16, 5, 5, 2], host_end);
+    }
+
+    #[test]
+    fn test_async_set_u8_device_slice() {
+        let _context = crate::quick_init().unwrap();
+        let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
+        let mut buf = DeviceBuffer::from_slice(&[2u8, 2, 2, 2]).unwrap();
+        let mut host_end = [0u8, 0, 0, 0];
+        buf[1..3].async_set_u8(5, &stream).unwrap();
+        stream.synchronize().unwrap();
+        buf[0..4].copy_to(&mut host_end).unwrap();
+        assert_eq!([2u8, 5, 5, 2], host_end);
     }
 
     #[test]
