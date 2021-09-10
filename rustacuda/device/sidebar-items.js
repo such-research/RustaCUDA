@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["DeviceAttribute","All supported device attributes for Device::get_attribute"],["DeviceP2PAttribute","P2P Attributes"]],"struct":[["Device","Opaque handle to a CUDA device."],["Devices","Iterator over all available CUDA devices. See the Device::devices function for more information."]]});
