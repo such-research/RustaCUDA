@@ -222,24 +222,38 @@ pub enum DeviceAttribute {
     HandleTypeWin32KmtHandleSupported = 105,
     /// Maximum number of blocks per multiprocessor
     MaxBlocksPerMultiprocessor = 106,
-    ///Device supports compression of memory
+    /// Device supports compression of memory
     GenericCompressionSupported = 107,
-    ///Device's maximum L2 persisting lines capacity setting in bytes
+    /// Device's maximum L2 persisting lines capacity setting in bytes
     MaxPersistingL2CacheSize = 108,
     /// The maximum value of `CUaccessPolicyWindow::num_bytes`.
     MaxAccessPolicyWindowSize = 109,
-    ///Device supports specifying the GPUDirect RDMA flag with `cuMemCreate`
+    /// Device supports specifying the GPUDirect RDMA flag with `cuMemCreate`
     GpuDirectRdmaWithCudaVmnSupported = 110,
-    ///Shared memory reserved by CUDA driver per block in bytes
+    /// Shared memory reserved by CUDA driver per block in bytes
     ReservedSharedMemoryPerBlock = 111,
-    ///Device supports sparse CUDA arrays and sparse CUDA mipmapped arrays
+    /// Device supports sparse CUDA arrays and sparse CUDA mipmapped arrays
     SparseCudaArraySupported = 112,
-    ///Device supports using the `cuMemHostRegister` flag `CU_MEMHOSTREGISTER_READ_ONLY` to register memory that must be mapped as read-only to the GPU
+    /// Device supports using the `cuMemHostRegister` flag `CU_MEMHOSTREGISTER_READ_ONLY` to register memory that must be mapped as read-only to the GPU
     ReadOnlyHostRegisterSupported = 113,
-    ///External timeline semaphore interop is supported on the device
+    /// External timeline semaphore interop is supported on the device
     TimelineSemaphoreInteropSupported = 114,
-    ///Device supports using the ::cuMemAllocAsync and `cuMemPool` family of APIs
+    /// Device supports using the ::cuMemAllocAsync and `cuMemPool` family of APIs
     MemoryPoolsSupported = 115,
+}
+
+/// P2P Attributes
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum DeviceP2PAttribute {
+    /// A relative value indicating the performance of the link between two devices
+    PerformanceRank = 1,
+    /// P2P Access is enabled
+    AccessSupported = 2,
+    /// Atomic operation over the link supported
+    NativeAtomicSupported = 3,
+    /// Accessing CUDA arrays over the link supported
+    CudaArrayAccessSupported = 4,
 }
 
 /// Opaque handle to a CUDA device.
@@ -407,6 +421,36 @@ impl Device {
     pub(crate) fn into_inner(self) -> CUdevice {
         self.device
     }
+
+    /// Queries if a device may directly access a peer device's memory.
+    pub fn can_access_peer(self, peer: &Device) -> CudaResult<bool> {
+        unsafe {
+            let mut val = 0i32;
+            cuDeviceCanAccessPeer(
+                &mut val as *mut i32,
+                self.device,
+                peer.device
+            )
+            .to_result()?;
+            Ok(val == 1)
+        }
+    }
+
+    /// Queries attributes of the link between two devices.
+    pub fn get_p2p_attribute(self, peer: &Device, attr: DeviceP2PAttribute) -> CudaResult<i32> {
+        unsafe {
+            let mut val = 0i32;
+            cuDeviceGetP2PAttribute(
+                &mut val as *mut i32,
+                // This should be safe, as the repr and values of DeviceAttribute should match.
+                ::std::mem::transmute(attr),
+                self.device,
+                peer.device
+            )
+            .to_result()?;
+            Ok(val)
+        }
+    }
 }
 
 /// Iterator over all available CUDA devices. See
@@ -469,7 +513,7 @@ mod test {
         Ok(())
     }
 
-    // Ensure that the two enums always stay aligned.
+    // Simple test that some enums are aligned. Not a comprehensive test for the enums.
     #[test]
     fn test_enums_align() {
         assert_eq!(

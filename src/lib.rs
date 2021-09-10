@@ -268,6 +268,8 @@ mod test {
         init(CudaFlags::empty()).unwrap();
         init(CudaFlags::empty()).unwrap();
     }
+
+    
 }
 
 // Fake module with a private trait used to prevent outside code from implementing certain traits.

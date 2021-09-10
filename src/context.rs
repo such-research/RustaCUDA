@@ -840,11 +840,66 @@ impl CurrentContext {
         }
     }
 
+    /// Enables direct access to memory allocations in a peer context.
+    pub fn enable_peer_access<C: ContextHandle>(peer: &C) -> CudaResult<()> {
+        unsafe {
+            cuCtxEnablePeerAccess(peer.get_inner(), 0).to_result()?;
+            Ok(())
+        }
+    }
+
+    /// Disables direct access to memory allocations in a peer context and unregisters any registered allocations.
+    pub fn disable_peer_access<C: ContextHandle>(peer: &C) -> CudaResult<()> {
+        unsafe {
+            cuCtxDisablePeerAccess(peer.get_inner()).to_result()?;
+            Ok(())
+        }
+    }
+
     /// Block to wait for a context's tasks to complete.
     pub fn synchronize() -> CudaResult<()> {
         unsafe {
             cuCtxSynchronize().to_result()?;
             Ok(())
         }
+    }
+}
+
+
+#[cfg(test)]
+mod test_device_buffer {
+    use super::*;
+    use crate::CudaFlags;
+    use crate::device::Device;
+    use crate::memory::{DeviceBuffer, DeviceSlice, CopyPeer, CopyDestination};
+
+    #[test]
+    fn test_copy_peer() {
+        crate::init(CudaFlags::empty()).unwrap();
+
+        // Execute test only if two or more CUDA devices that can access each other
+        if Device::num_devices().unwrap() < 2 { 
+            return;
+        }
+        let source_device = Device::get_device(0).unwrap();
+        let dest_device = Device::get_device(1).unwrap();
+        if !dest_device.can_access_peer(&source_device).unwrap() {
+            return;
+        }
+        let source_context = Context::create_and_push(ContextFlags::empty(), source_device).unwrap();
+        let dest_context = Context::create_and_push(ContextFlags::empty(), dest_device).unwrap();
+
+        // Initialize source and destination buffers on separate CUDA devices and contexts
+        CurrentContext::set_current(&source_context).unwrap();
+        let source_host = [1.89f32, 2.11];
+        let source_buf = DeviceBuffer::<f32>::from_slice(&[1.89, 2.11]).unwrap();
+        CurrentContext::set_current(&dest_context).unwrap();
+        CurrentContext::enable_peer_access(&source_context).unwrap();
+        let mut dest_host = [0.0f32, 0.0];
+        let mut dest_buf = DeviceBuffer::<f32>::zeroed(2).unwrap();
+        
+        DeviceSlice::copy_peer(&mut dest_buf[0..2], &dest_context, &source_buf[0..2], &source_context).unwrap();
+        dest_buf.copy_to(&mut dest_host).unwrap();
+        assert_eq!(source_host, dest_host);
     }
 }

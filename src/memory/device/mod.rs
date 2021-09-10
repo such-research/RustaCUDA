@@ -1,3 +1,4 @@
+use crate::context::ContextHandle;
 use crate::error::CudaResult;
 use crate::stream::Stream;
 
@@ -139,4 +140,26 @@ pub trait AsyncSetDestination<O: ?Sized>: crate::private::Sealed {
     ///
     /// If a CUDA error occurs, return the error.
     fn async_set_u8(&mut self, value: u8, stream: &Stream) -> CudaResult<()>;
+}
+
+/// Sealed trait implemented by types which represent allocated memory on the device.
+/// Source context must have been enabled to access destination context.
+pub trait CopyPeer<O: ?Sized>: crate::private::Sealed {
+    /// Copies device memory between two contexts.
+    ///
+    /// # Errors
+    ///
+    /// If a CUDA error occurs, return the error.
+    fn copy_peer<C: ContextHandle>(dest: &mut O, dest_context: &C, source: &O, source_context: &C) -> CudaResult<()>;
+}
+
+/// Sealed trait implemented by types which represent allocated memory on the device.
+/// Source context must have been enabled to access destination context.
+pub trait AsyncCopyPeer<O: ?Sized>: crate::private::Sealed {
+    /// Copies device memory between two contexts asynchronously.
+    ///
+    /// # Errors
+    ///
+    /// If a CUDA error occurs, return the error.
+    fn async_copy_peer<C: ContextHandle>(dest: &mut O, dest_context: &C, source: &O, source_context: &C, stream: &Stream) -> CudaResult<()>;
 }

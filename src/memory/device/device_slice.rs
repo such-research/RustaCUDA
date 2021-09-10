@@ -1,6 +1,6 @@
+use crate::context::ContextHandle;
 use crate::error::{CudaResult, ToResult};
-use crate::memory::device::AsyncCopyDestination;
-use crate::memory::device::{AsyncSetDestination, CopyDestination, DeviceBuffer, SetDestination};
+use crate::memory::device::{AsyncCopyDestination, AsyncSetDestination, CopyDestination, DeviceBuffer, SetDestination};
 use crate::memory::DevicePointer;
 use crate::stream::Stream;
 use cuda_driver_sys::*;
@@ -12,6 +12,8 @@ use std::ops::{
 
 use std::os::raw::c_void;
 use std::slice::{self, Chunks, ChunksMut};
+
+use super::{AsyncCopyPeer, CopyPeer};
 
 /// Fixed-size device-side slice.
 #[derive(Debug)]
@@ -610,6 +612,53 @@ impl<T> AsyncCopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
     }
 }
 
+impl<T> CopyPeer<DeviceSlice<T>> for DeviceSlice<T> {
+    fn copy_peer<C: ContextHandle>(dest: &mut DeviceSlice<T>, dest_context: &C, src: &DeviceSlice<T>, src_context: &C) -> CudaResult<()> {
+        assert!(
+            src.len() == dest.len(),
+            "destination and source slices have different lengths"
+        );
+        let size = mem::size_of::<T>() * src.len();
+        if size != 0 {
+            unsafe {
+                cuMemcpyPeer(
+                    dest.as_mut_ptr() as u64,
+                    dest_context.get_inner(),
+                    src.as_ptr() as u64,
+                    src_context.get_inner(),
+                    size,
+                )
+                .to_result()?
+            }
+        }
+        Ok(())
+    }
+}
+
+impl<T> AsyncCopyPeer<DeviceSlice<T>> for DeviceSlice<T> {
+    fn async_copy_peer<C: ContextHandle>(dest: &mut DeviceSlice<T>, dest_context: &C, src: &DeviceSlice<T>, src_context: &C, stream: &Stream) -> CudaResult<()> {
+        assert!(
+            src.len() == dest.len(),
+            "destination and source slices have different lengths"
+        );
+        let size = mem::size_of::<T>() * src.len();
+        if size != 0 {
+            unsafe {
+                cuMemcpyPeerAsync(
+                    dest.as_mut_ptr() as u64,
+                    dest_context.get_inner(),
+                    src.as_ptr() as u64,
+                    src_context.get_inner(),
+                    size,
+                    stream.as_inner(),
+                )
+                .to_result()?
+            }
+        }
+        Ok(())
+    }
+}
+
 impl<T> SetDestination<T> for DeviceSlice<T> {
     fn set_u32(&mut self, value: u32) -> CudaResult<()> {
         assert!(
@@ -709,3 +758,4 @@ impl<T> AsyncSetDestination<T> for DeviceSlice<T> {
         }
     }
 }
+
