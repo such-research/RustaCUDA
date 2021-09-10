@@ -294,7 +294,7 @@ impl Stream {
     //
     // Necessary for certain CUDA functions outside of this
     // module that expect a bare `CUstream`.
-    pub(crate) fn as_inner(&self) -> CUstream {
+    pub fn as_inner(&self) -> CUstream {
         self.inner
     }
 
